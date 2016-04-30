@@ -1,0 +1,26 @@
+{
+  "name": "phantomjscloud",
+  "version": "0.0.0",
+  "description": "phantomjscloud client api library for node",
+  "author": {
+    "name": "PhantomJs Cloud",
+    "email": "jasons@phantomjscloud.com"
+  },
+  "main": "./lib/entry-point.js",
+  "typings": "./lib/entry-point.d.ts",
+  "scripts": {
+    "test": "node ./lib/entry-point.js isTest=TRUE",
+    "build": "rm -rf lib && tsc",
+    "install": "typings install",
+    "prepublish": "npm run build"
+  },
+  "dependencies": {
+    "bluebird": "^3.3.5",
+    "bluebird-retry": "^0.6.1",
+    "lodash": "^4.11.1"
+  },
+  "devDependencies": {
+    "mocha": "^2.4.5",
+    "typings": "^0.8.1"
+  }
+}
