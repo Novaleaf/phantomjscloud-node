@@ -6,13 +6,14 @@
     "name": "PhantomJs Cloud",
     "email": "jasons@phantomjscloud.com"
   },
-  "main": "./lib/entry-point.js",
-  "typings": "./lib/entry-point.d.ts",
+  "main": "./entry-point.js",
+  "typings": "./entry-point.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Novaleaf/phantomjscloud-node"
+  },
   "scripts": {
-    "test": "node ./lib/entry-point.js isTest=TRUE",
-    "build": "rm -rf lib && tsc",
-    "install": "typings install",
-    "prepublish": "npm run build"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "bluebird": "^3.3.5",

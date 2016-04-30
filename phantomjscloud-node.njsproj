@@ -35,6 +35,10 @@
   <ItemGroup>
     <Content Include="tsconfig.json" />
     <TypeScriptCompile Include="dev\io-data-types.ts" />
+    <TypeScriptCompile Include="dev\_test-main.ts">
+      <SubType>Code</SubType>
+      <TestFramework>Mocha</TestFramework>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="entry-point.ts" />
     <Content Include="package.json" />
     <Content Include="README.md" />
