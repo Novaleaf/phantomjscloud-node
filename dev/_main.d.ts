@@ -1,5 +1,3 @@
-import refs = require("./refs");
-import Promise = refs.Promise;
 export import ioDatatypes = require("./io-data-types");
 /**
  * errors thrown by this module derive from this
@@ -44,6 +42,6 @@ export declare class BrowserApi {
      * @param task
      */
     private _task_worker(task);
-    requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions): Promise<ioDatatypes.IUserResponse>;
-    requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[]): Promise<ioDatatypes.IUserResponse>[];
+    requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions): PromiseLike<ioDatatypes.IUserResponse>;
+    requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[]): PromiseLike<ioDatatypes.IUserResponse>[];
 }

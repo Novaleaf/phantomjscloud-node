@@ -1,6 +1,6 @@
 # phantomjscloud
 
-
+#IMPORTANT: this library is still in development. features may change or break over the next few days.
 
 The official PhantomJs Cloud API Client Library for Node.js
 

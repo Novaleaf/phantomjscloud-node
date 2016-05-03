@@ -40,7 +40,7 @@ module utils {
 
 		constructor(
 			/** The "WorkerThread", this function processes work. it's execution is automatically managed by this object. */
-			private _workProcessor: (input: TInput) => Promise<TOutput>,
+			private _workProcessor: (input: TInput) => PromiseLike<TOutput>,
 			public options: AutoscaleConsumerOptions = {} as any
 		) {
 			let defaultOptions = new AutoscaleConsumerOptions();
@@ -356,7 +356,7 @@ export class BrowserApi {
 	 * the autoscaler worker function
 	 * @param task
 	 */
-	private _task_worker(task: IBrowserApiTask): Promise<ioDatatypes.IUserResponse> {
+	private _task_worker(task: IBrowserApiTask): PromiseLike<ioDatatypes.IUserResponse> {
 
 		_.defaults(task.customOptions, this.options);
 
@@ -394,7 +394,7 @@ export class BrowserApi {
 	}
 
 
-    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {}): Promise<ioDatatypes.IUserResponse> {
+    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {}): PromiseLike<ioDatatypes.IUserResponse> {
 
 		let _request = request as any;
 		let userRequest: ioDatatypes.IUserRequest;
@@ -416,9 +416,9 @@ export class BrowserApi {
 
 
 
-	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[]): Promise<ioDatatypes.IUserResponse>[] {
+	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[]): PromiseLike<ioDatatypes.IUserResponse>[] {
 
-		let responsePromises: Promise<ioDatatypes.IUserResponse>[] = [];
+		let responsePromises: PromiseLike<ioDatatypes.IUserResponse>[] = [];
 
 		_.forEach(requests, (request) => {
 			responsePromises.push(this.requestSingle(request));
