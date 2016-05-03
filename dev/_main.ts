@@ -5,10 +5,140 @@ import PromiseRetry = refs.PromiseRetry;
 
 
 
-import ioDatatypes = require("./io-data-types");
+export import ioDatatypes = require("./io-data-types");
+
+
 import _ = refs.lodash;
 
+/**
+ *  helper utils used by the phantomjscloud api.   will be moved to a utils module later
+ */
 module utils {
+
+
+	/**
+	 * options for the AutoscaleConsumer
+	 */
+	export class AutoscaleConsumerOptions {
+		/** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=2 */
+		public workerMin: number = 2;
+		/** maximum number of parallel workers.  default=30 */
+		public workerMax: number = 30;
+		/** if there is pending work, how long (in ms) to wait before increasing our number of workers.  This should not be too fast otherwise you can overload the autoscaler.  default=3000 (3 seconds), which would result in 20 workers after 1 minute of operation on a very large work queue. */
+		public workersLinearGrowthMs = 3000;
+		/** how long (in ms) for an idle worker (no work remaining) to wait before attempting to grab new work.  default=1000 (1 second) */
+		public workerReaquireMs = 1000;
+		/** the max time a worker will be idle before disposing itself.  default=20000 (20 seconds) */
+		public workerMaxIdleMs = 20000;
+	}
+
+	/**
+	 * allows consumption of an autoscaling process.  asynchronously executes work, scheduling the work to be executed in a graceful "ramping work up" fashion so to take advantage of the autoscaler increase-in-capacity features.
+	 * technical details: enqueues all process requests into a central pool and executes workers on them.  if there is additional queued work, increases workers over time.
+	 */
+	export class AutoscaleConsumer<TInput, TOutput>{
+
+		constructor(
+			/** The "WorkerThread", this function processes work. it's execution is automatically managed by this object. */
+			private _workProcessor: (input: TInput) => Promise<TOutput>,
+			public options: AutoscaleConsumerOptions = {} as any
+		) {
+			let defaultOptions = new AutoscaleConsumerOptions();
+			_.defaults(options, defaultOptions);
+		}
+
+		private _pendingTasks: {
+			input: TInput;
+			resolve: (result: TOutput) => void;
+			reject: (error: Error) => void;
+		}[] = [];
+
+
+		public process(input: TInput): Promise<TOutput> {
+
+			let toReturn = new Promise<TOutput>((resolve, reject) => {
+				this._pendingTasks.push({ input, resolve, reject });
+			});
+			this._tryStartProcessing();
+			return toReturn;
+		}
+
+
+		private _workerCount: number = 0;
+		private _workerLastAddTime: Date = new Date(0);
+
+
+		private _tryStartProcessing() {
+
+			if (this._workerCount >= this.options.workerMax || this._pendingTasks.length === 0) {
+				return;
+			}
+
+			let nextAddTime = this._workerLastAddTime.getDate() + this.options.workersLinearGrowthMs;
+			let now = Date.now();
+
+			let timeToAddWorker = false;
+
+			if (this._workerCount < this.options.workerMin) {
+				timeToAddWorker = true;
+			}
+			if (now >= nextAddTime) {
+				//if we don't have much work remaining, don't add more workers
+				//if ((this._workerCount * this.options.workerMinimumQueueMultiplier) < this._pendingRequests.length)
+				timeToAddWorker = true;
+			}
+
+			if (timeToAddWorker === true) {
+				this._workerCount++;
+				this._workerLastAddTime = new Date();
+				setTimeout(() => { this._workerLoop() });
+			}
+		}
+
+		private _workerLoop(idleMs: number = 0) {
+
+
+			if (this._pendingTasks.length === 0) {
+				//no work to do, dispose or wait
+				if (idleMs > this.options.workerMaxIdleMs) {
+					//already idle too long, dispose
+					this._workerLoop_disposeHelper();
+					return;
+				} else {
+					//retry this workerLoop after a short idle time
+					setTimeout(() => { this._workerLoop(idleMs + this.options.workerReaquireMs) }, this.options.workerReaquireMs);
+				}
+			}
+			let work = this._pendingTasks.shift();
+
+			Promise.try(() => {
+				return this._workProcessor(work.input);
+			}).then((output) => {
+				work.resolve(output);
+			}, (error) => {
+				work.reject(error);
+			});
+
+
+
+
+			//fire another loop next tick
+			setTimeout(() => { this._workerLoop(); });
+
+			//since we had work to do, there might be more work to do/scale up workers for. fire a "try start processing"
+			this._tryStartProcessing();
+
+			return;
+		}
+
+		private _workerLoop_disposeHelper() {
+			this._workerCount--;
+		}
+
+
+
+	}
+
 
 	/**
  *  a helper for constructing reusable endpoint functions
@@ -16,10 +146,10 @@ module utils {
 	export class EzEndpointFunction<TSubmitPayload, TRecievePayload>{
 
 		constructor(
-			public urlRoot: string,
-			public path: string,
+			public origin?: string,
+			public path?: string,
 			/** default is to retry for up to 10 seconds, (no retries after 10 seconds) */
-			public retryOptions: refs._BluebirdRetryInternals.IOptions = { timeout: 60000, interval: 100, backoff: 2 , max_interval:5000 },
+			public retryOptions: refs._BluebirdRetryInternals.IOptions = { timeout: 60000, interval: 100, backoff: 2, max_interval: 5000 },
 			/** default is to timeout (err 545) after 60 seconds*/
 			public requestOptions: Axios.AxiosXHRConfigBase<TRecievePayload> = { timeout: 60000 },
 			/** allows aborting retries (if any).  return null to continue retry normally,  return any non-null to abort retries and return the result you are returning.
@@ -38,14 +168,14 @@ module utils {
 		}
 
 		public toJson() {
-			return { urlRoot: this.urlRoot, path: this.path, retryOptions: this.retryOptions, requestOptions: this.requestOptions };
+			return { origin: this.origin, path: this.path, retryOptions: this.retryOptions, requestOptions: this.requestOptions };
 		}
 
-		public post(submitPayload?: TSubmitPayload, /**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>): Promise<Axios.AxiosXHR<TRecievePayload>> {
+		public post(submitPayload?: TSubmitPayload, /**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>, customOrigin: string = this.origin, customPath: string = this.path): Promise<Axios.AxiosXHR<TRecievePayload>> {
 
 			let lastErrorResult: any = null;
 			return PromiseRetry<Axios.AxiosXHR<TRecievePayload>>(() => {
-				let endpoint = this.urlRoot + this.path
+				let endpoint = customOrigin + customPath;
 				//log.debug("EzEndpointFunction axios.post", { endpoint });
 
 
@@ -91,9 +221,9 @@ module utils {
 					return Promise.reject(err);
 				});
 		}
-		public get(/**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>): Promise<Axios.AxiosXHR<TRecievePayload>> {
+		public get(/**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>, customOrigin: string = this.origin, customPath: string = this.path): Promise<Axios.AxiosXHR<TRecievePayload>> {
 			return PromiseRetry<Axios.AxiosXHR<TRecievePayload>>(() => {
-				let endpoint = this.urlRoot + this.path
+				let endpoint = customOrigin + customPath;
 				//log.debug("EzEndpointFunction axios.get", { endpoint });
 				//return axios.post<TRecievePayload>(endpoint, submitPayload, this.requestOptions) as any;
 
@@ -137,71 +267,166 @@ module utils {
 	}
 }
 
-class PhantomJsCloudException extends Error {
+/**
+ * errors thrown by this module derive from this
+ */
+export class PhantomJsCloudException extends Error {
+}
+
+/**
+ * errors thrown by the BrowserApi derive from this
+ */
+export class PhantomJsCloudBrowserApiException extends PhantomJsCloudException {
+	constructor(message: string, public statusCode: number, public payload: any, public headers: { [key: string]: string }) {
+		super(message);
+	}
+}
+
+export interface IBrowserApiOptions {
+	/** the endpoint you want to point at, for example using with a private cloud.  if not set, will default to the PhantomJsCloud public api. */
+	endpointOrigin?: string;
+	/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/
+	apiKey?: string;
+	//isDebug?: boolean;
+}
+/**
+ *  the defaults used if options are not passed to a new BrowserApi object.
+ */
+export let defaultBrowserApiOptions: IBrowserApiOptions = {
+    endpointOrigin: "https://PhantomJsCloud.com",
+    apiKey: "a-demo-key-with-low-quota-per-ip-address",
 }
 
 
-class PhantomJsCloud {
 
-	private ezEndpoint: utils.EzEndpointFunction<ioDatatypes.IUserRequest,ioDatatypes.IUserResponse>; 
-	constructor(public apiKey: string = "a-demo-key-with-low-quota-per-ip-address", public options: PhantomJsCloud.Options = {}) {
-		//
-		this.ezEndpoint = new utils.EzEndpointFunction<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>(options.endpoint, "");
-	}
+/** internal use: the user's request and it's options */
+interface IBrowserApiTask {
+	userRequest: ioDatatypes.IUserRequest;
+	customOptions: IBrowserApiOptions;
+}
 
-	public requestSingle(pageRequest: ioDatatypes.PageRequest): PromiseLike<ioDatatypes.IUserResponse>;
-	public requestSingle(userRequest: ioDatatypes.IUserRequest): PromiseLike<ioDatatypes.IUserResponse>;
-	public requestSingle(singleRequest: any): PromiseLike<ioDatatypes.IUserResponse> {
-		let userRequest: ioDatatypes.IUserRequest;
-		if (singleRequest.pages != null && _.isArray(singleRequest.pages)){
-			userRequest = singleRequest;
+///** the results of PhantomJsCloud processing */
+//export interface IBrowserApiResult {
+//	/** your original request */
+//	userRequest: ioDatatypes.IUserRequest;
+//	userResponse: ioDatatypes.IUserResponse;
+//	statusCode: number;
+//	responseHeaders: { [key: string]: string };
+//	responseMeta: {
+//		creditCost: number;
+//		dailySubscriptionCreditsRemaining: number;
+//		prepaidCreditsRemaining: number;
+//		totalCreditsRemaining: number;
+//		contentName: string;
+//		contentStatusCode: number;
+//		contentUrl: string;
+//	}
+//}
+
+//let textUserResponse: ioDatatypes.IUserResponse;
+//textUserResponse.
+
+/**
+ * The PhantomJsCloud Browser Api
+ */
+export class BrowserApi {
+
+	private _endpointPath = "/api/browser/v2/";
+	private _browserV2RequestezEndpoint = new utils.EzEndpointFunction<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>();
+
+    public options: IBrowserApiOptions;
+
+	constructor(/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/ apiKey?: string);
+    constructor(options?: IBrowserApiOptions);
+    constructor(keyOrOptions: string | IBrowserApiOptions = {} as any) {
+		if (typeof keyOrOptions === "string") {
+			this.options = { apiKey: keyOrOptions };
 		} else {
-			userRequest = { pages: [singleRequest] };
+			this.options = keyOrOptions;
 		}
-		if (userRequest.pages == null || _.isArray(userRequest.pages) !== true || userRequest.pages.length === 0) {
-			return Promise.reject(new PhantomJsCloudException("invalid input.  request not sent."));
-		}
+		_.defaults(this.options, defaultBrowserApiOptions);
 
-		return this.ezEndpoint.post(userRequest)
-			.then((axiosResponse) => {
-				return Promise.resolve(axiosResponse.data);
-			}, (errResponse) => {
-				let responsePayload: string;
-				if (errResponse.data == null) {
-					responsePayload = "NULL";
-				} else {
-					responsePayload = JSON.stringify(errResponse.data);
-				}
-				let error = new PhantomJsCloudException(`request failed due to error ${errResponse.status.toString()}.  reply from server=` + responsePayload);
-				(<any>error)["statusCode"] = errResponse.status as any;
 
-				return Promise.reject(error);
+		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker);
+	}
+
+	private _autoscaler: utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>;
+
+	/**
+	 * the autoscaler worker function
+	 * @param task
+	 */
+	private _task_worker(task: IBrowserApiTask): Promise<ioDatatypes.IUserResponse> {
+
+		_.defaults(task.customOptions, this.options);
+
+		return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, this._endpointPath)
+			.then((httpResponse) => {
+
+				//let headers: { [key: string]: string } = httpResponse.headers as any;
+
+				//let toReturn: IBrowserApiResult = {
+				//	userRequest: task.userRequest,
+				//	userResponse: httpResponse.data,
+				//	responseHeaders: headers,
+				//	statusCode: httpResponse.status,
+				//	responseMeta: {
+				//		contentName: headers["pjsc-content-name"],
+				//		contentStatusCode: parseInt(headers["pjsc-content-status-code"]),
+				//		contentUrl: headers["pjsc-content-url"],
+				//		creditCost: parseFloat(headers["pjsc-credit-cost"]),
+				//		dailySubscriptionCreditsRemaining: parseFloat(headers["pjsc-daily-subscription-credits-remaining"]),
+				//		prepaidCreditsRemaining: parseFloat(headers["pjsc-prepaid-credits-remaining"]),
+				//		totalCreditsRemaining: parseFloat(headers["pjsc-total-credits-remaining"]),
+				//	}
+				//};
+
+
+				return Promise.resolve(httpResponse.data);
+
+			}, (errResponse: Axios.AxiosXHR<ioDatatypes.IUserResponse>) => {
+
+				let statusCode = errResponse.status;
+				let ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode.toString(), statusCode, errResponse.data, errResponse.headers as any);
+				return Promise.reject(ex);
 			});
-	}
-	
 
-}
-namespace PhantomJsCloud {
-
-	export interface Options {
-		/** the endpoint you want to point at.  if not set, will default to "https://PhantomJsCloud.com/api/browser/v2/" */
-		endpoint?: string;
-		isDebug?: boolean;
 	}
 
-	export let PageRequest = ioDatatypes.PageRequest;
+
+    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {}): Promise<ioDatatypes.IUserResponse> {
+
+		let _request = request as any;
+		let userRequest: ioDatatypes.IUserRequest;
+		if (_request.pages != null && _.isArray(_request.pages)) {
+			userRequest = _request;
+		} else {
+			userRequest = { pages: [_request] };
+		}
+		//set outputAsJson
+		_.forEach(userRequest.pages, (page) => { page.outputAsJson = true; });
+
+		let task: IBrowserApiTask = {
+			userRequest,
+			customOptions
+		};
+
+		return this._autoscaler.process(task);
+	}
 
 
 
+	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[]): Promise<ioDatatypes.IUserResponse>[] {
+
+		let responsePromises: Promise<ioDatatypes.IUserResponse>[] = [];
+
+		_.forEach(requests, (request) => {
+			responsePromises.push(this.requestSingle(request));
+		});
+
+		return responsePromises;
+	}
 }
 
-export = PhantomJsCloud;
 
 
-
-
-//console.log("hello world");
-
-
-
-//export let out = "put";

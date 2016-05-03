@@ -1,18 +1,49 @@
-import ioDatatypes = require("./io-data-types");
-declare class PhantomJsCloud {
-    apiKey: string;
-    options: PhantomJsCloud.Options;
-    private ezEndpoint;
-    constructor(apiKey?: string, options?: PhantomJsCloud.Options);
-    requestSingle(pageRequest: ioDatatypes.PageRequest): PromiseLike<ioDatatypes.IUserResponse>;
-    requestSingle(userRequest: ioDatatypes.IUserRequest): PromiseLike<ioDatatypes.IUserResponse>;
+import refs = require("./refs");
+import Promise = refs.Promise;
+export import ioDatatypes = require("./io-data-types");
+/**
+ * errors thrown by this module derive from this
+ */
+export declare class PhantomJsCloudException extends Error {
 }
-declare namespace PhantomJsCloud {
-    interface Options {
-        /** the endpoint you want to point at.  if not set, will default to "https://PhantomJsCloud.com/api/browser/v2/" */
-        endpoint?: string;
-        isDebug?: boolean;
-    }
-    let PageRequest: typeof ioDatatypes.PageRequest;
+/**
+ * errors thrown by the BrowserApi derive from this
+ */
+export declare class PhantomJsCloudBrowserApiException extends PhantomJsCloudException {
+    statusCode: number;
+    payload: any;
+    headers: {
+        [key: string]: string;
+    };
+    constructor(message: string, statusCode: number, payload: any, headers: {
+        [key: string]: string;
+    });
 }
-export = PhantomJsCloud;
+export interface IBrowserApiOptions {
+    /** the endpoint you want to point at, for example using with a private cloud.  if not set, will default to the PhantomJsCloud public api. */
+    endpointOrigin?: string;
+    /**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/
+    apiKey?: string;
+}
+/**
+ *  the defaults used if options are not passed to a new BrowserApi object.
+ */
+export declare let defaultBrowserApiOptions: IBrowserApiOptions;
+/**
+ * The PhantomJsCloud Browser Api
+ */
+export declare class BrowserApi {
+    private _endpointPath;
+    private _browserV2RequestezEndpoint;
+    options: IBrowserApiOptions;
+    constructor(/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/ apiKey?: string);
+    constructor(options?: IBrowserApiOptions);
+    private _autoscaler;
+    /**
+     * the autoscaler worker function
+     * @param task
+     */
+    private _task_worker(task);
+    requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions): Promise<ioDatatypes.IUserResponse>;
+    requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[]): Promise<ioDatatypes.IUserResponse>[];
+}

@@ -1,3 +1,26 @@
+/**
+ * @hidden
+ */
+export interface IProcessManagerOptions {
+    /** where input files are read from.
+     * must already exist.  can have pending inputs in it upon startup.
+     */
+    inputPath: string;
+    /** where input files are moved to for processing.  and where output files are put.
+     * marked with "done.txt" when complete.
+     * must already exist and be empty
+     */
+    outputPath: string;
+    /** how often to watch the temp folder for new input files*/
+    requestWatchInterval: number;
+    /** how many ms we will wait if the activeRequest is unresponsive */
+    activeRequestFrozenTimeout: number;
+    isDebug: boolean;
+    /**
+     *  friendly identifier used for debug purposes
+     */
+    id: string;
+}
 /** options specific to rendering pdfs.  IMPORTANT NOTE:  we strongly recommend using ```px``` as your units of measurement.  */
 export interface IPdfOptions {
     /** height and width are optional if format is specified.  Use of ```px``` is strongly recommended.  Supported dimension units are: 'mm', 'cm', 'in', 'px'. No unit means 'px'. */
@@ -26,67 +49,146 @@ export interface ICookie {
     /** unix epoch timestamp (in ms) Javascript Example: ```(new Date()).getTime() + (1000 * 60 * 60)   // <-- expires in 1 hour ``` */
     expires?: number;
 }
+/** adjustable parameters for when making network requests to the url specified.  used by PageRequest. */
+export interface IUrlSettings {
+    /** GET (default) or POST*/
+    operation: string;
+    /** defaults to 'utf8'*/
+    encoding?: string;
+    /** custom headers for the taret page.   if you want to set headers for every sub-resource requested, use the ```pageRequest.requestSettings.customHeaders``` parameter instead.*/
+    headers?: {
+        [key: string]: string;
+    };
+    /** submitted in POST BODY of your request. */
+    data?: any;
+}
+/** settings related to requesting internet resources (your page and resources referenced by your page) */
+export interface IRequestSettings {
+    /**
+     *  set to true to skip loading of inlined images
+     */
+    ignoreImages?: boolean;
+    /**
+     * set to true to disable all Javascript from being processed on your page.
+     */
+    disableJavascript?: boolean;
+    /**
+     * default useragent is ```"Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.34 (KHTML, like Gecko) Safari/534.34 PhantomJS/2.0.0 (PhantomJsCloud.com/2.0.1)"```
+     */
+    userAgent?: string;
+    /**
+     * username/password for simple HTTP authentication
+     */
+    authentication?: {
+        userName: string;
+        password: string;
+    };
+    /**
+     *  set to true to prohibit cross-site scripting attempts (XSS)
+     */
+    xssAuditingEnabled?: boolean;
+    /**
+     * set to true to enable web security.  default is false
+     */
+    webSecurityEnabled?: boolean;
+    /** maximum amount of time to wait for each external resources to load. (.js, .png, etc) if the time exceeds this, we don't cancel the resource request, but we don't delay rendering the page if everything else is done.  */
+    resourceWait?: number;
+    /** maximum amount of time to wait for each external resource to load.  we kill the request if it exceeds this amount. */
+    resourceTimeout?: number;
+    /** the maximum amount of time (timeout) you wish to wait for the page to finish loading.  When rendering a page, we will give you whatever is ready at this time (page may be incompletely loaded).
+     * Can be increased up to 5 minutes, but that only should be used as a last resort, as it is a relatively expensive page render.
+      */
+    maxWait?: number;
+    /** Milliseconds to delay rendering after the last resource is finished loading (default is 1000ms).  This is useful in case there are any AJAX requests or animations that need to finish up.  If additional network requests are made while we are waiting, the waitInterval will restart once finished again.
+     * This can safely be set to 0 if you know there are no AJAX or animations you need to wait for (decreasing your billed costs)
+     */
+    waitInterval?: number;
+    /** if true, will stop page load upon the first error detected, and move to next phase (render or next page) */
+    stopOnError?: boolean;
+    /** array of regex + adjustment parametes for modifying or rejecting resources being loaded by the webpage.
+     * Example:  ```"resourceModifier": [{regex:".*css.*",isBlacklisted:true}{"regex": "http://mydomain.com.*","setHeader": {"hello": "world","Accept-encoding": "tacos"}}]```
+     * **IMPORTANT NOTE**: If you use this to blacklist resources, it is strongly recommended you also set the **```clearCache```** parameter.  This is because cached resources are not requested, and thus will not be able to be blacklisted.
+     */
+    resourceModifier?: IResourceModifier[];
+    /**
+     * specify additional request headers here.  They will be sent to the server for every request issued (the page and resources).  Unicode is not supported (ASCII only)
+     * example: ```customHeaders:{"myHeader":"myValue","yourHeader":"someValue"}```
+     * if you want to set headers for just the target page (and not every sub-request) use the ```pageRequest.urlSettings.headers``` parameter.
+     */
+    customHeaders?: {
+        [key: string]: string;
+    };
+    /**
+     *  if true, will clear the browser memory cache before processing the request.  Good for expiring data, and very important if blacklisting resources (see [resourceModifier](#_io_datatypes_.pagerequest.requestsettings.resourcemodifier)  parameter).  Default is false.
+     */
+    clearCache?: boolean;
+    /**
+     *  if true, will clear cookies before processing the request.  Default is false.
+     * **IMPORTANT NOTE**: to protect your privacy, we always clear cookies after completing your transaction.  This option is only useful if making multiple requests in one transaction (IE: multiple **```pageRequests```** in a **```userRequest```** API call)
+     */
+    clearCookies?: boolean;
+    /**
+     * Set Cookies for any domain, prior to loading this pageRequest.  If a cookie already exists with the same domain+path+name combination, it will be replaced.
+     * See [ICookie](#_io_datatypes_.icookie)  for documentation on the cookie parameters.
+     */
+    cookies?: ICookie[];
+    /**
+     * delete any cookie with a matching "name" property before processing the request.
+     */
+    deleteCookies?: string[];
+}
+/**
+ * Execute your own custom JavaScript inside the page being loaded.
+ * **INPUT**
+ * You can pass in either the url to a script to load, or the text of the script itself.  Example: ```scripts:{domReady:["//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.js","return 'Hello, World!';"]}```
+ * **OUTPUT**
+ * Your scripts can return data to you in the ```pageResponse.scriptOutput``` object.  You can access this directly via ```windows._pjscMeta.scriptOutput``` or your script can simply return a value and it will be set as the ```scriptOutput``` (not available on external, url loaded scripts)
+ * Also, if you use the ```pageRequest.renderType="script"``` setting, your response will be the ```scriptOutput``` itself (in JSON format) which allows you to construct your own custom API.  A very powerfull feature!
+ * **METADATA**
+ *
+ */
+export interface IScripts {
+    /**
+         * triggers when the dom is ready for the current page.  Please note that the page may still be loading.
+         */
+    domReady: string[];
+    /**
+         *  triggers when we determine the page has been completed.  If your page is being rendered, this occurs immediately before then.
+         * **IMPORTANT NOTE**:  Generally you do NOT want to load external scripts (url based) here, as it will hold up rendering.  Consider putting your external scripts in ```domReady```
+         */
+    loadFinished: string[];
+}
 /** The parameters for requesting and rendering a page.  When you submit an array of IPageRequests, they are loaded in-orrder, and only the last one is rendered.
  * All variables except 'url' are optional.
  */
-export declare class PageRequest {
+export interface IPageRequest {
     /** required.  the target page you wish to load */
     url: string;
     /** if specified, will be used as the content of the page you are loading (no network request will be made for the ```url```).  However, the ```url``` property is still required, as that will be used as the page's "pretend" url
      * example:  ```content:"<h1>Hello, World!</h1>",url:"about:blank"```
      */
-    content: string;
+    content?: string;
     /** adjustable parameters for when making network requests to the url specified */
-    urlSettings: {
-        operation: string;
-        encoding?: string;
-        headers?: {
-            [key: string]: string;
-        };
-        data?: any;
-    };
+    urlSettings?: IUrlSettings;
     /** "html": returns the html text,
     "jpeg"|"jpg" :  The default.  renders page as jpeg.   transparency not supported. (use ```png``` for transparency),
     "png": renders page as png,
     "pdf": renders page as a pdf,
     "script": returns the contents of ```window['_pjscMeta'].scriptOutput```.   see the [scripts](#_io_datatypes_.pagerequest.scripts)  parameter for more details,
     "plainText": return the text without html tags (page plain text),*/
-    renderType: string;
+    renderType?: string;
     /** TRUE to return the page conents and metadata as a JSON object.  see [IUserResponse](#_io_datatypes_.iuserresponse)
      * if FALSE, we return the rendered content in it's native form.
      */
-    outputAsJson: boolean;
+    outputAsJson?: boolean;
     /** settings related to requesting internet resources (your page and resources referenced by your page) */
-    requestSettings: {
-        ignoreImages: boolean;
-        disableJavascript: boolean;
-        userAgent: string;
-        authentication: {
-            userName: string;
-            password: string;
-        };
-        xssAuditingEnabled: boolean;
-        webSecurityEnabled: boolean;
-        resourceWait: number;
-        resourceTimeout: number;
-        maxWait: number;
-        waitInterval: number;
-        stopOnError: boolean;
-        resourceModifier: IResourceModifier[];
-        customHeaders: {
-            [name: string]: string;
-        };
-        clearCache: boolean;
-        clearCookies: boolean;
-        cookies: ICookie[];
-        deleteCookies: string[];
-    };
+    requestSettings?: IRequestSettings;
     /** add the nodes from your pageResponse that you do not wish to transmit.  This reduces the size of your data, thus reducing cost and transmission time.
      * if you need the data in these nodes, simply remove it from this array.
      */
-    suppressJson: string[];
+    suppressJson?: string[];
     /** settings related to rendering of the last page of your request.  See the [IRenderSettings](#_io_datatypes_.irendersettings) documentation (below) for details*/
-    renderSettings: IRenderSettings;
+    renderSettings?: IRenderSettings;
     /**
      * Execute your own custom JavaScript inside the page being loaded.
      * **INPUT**
@@ -97,11 +199,9 @@ export declare class PageRequest {
      * **METADATA**
      *
      */
-    scripts: {
-        domReady: string[];
-        loadFinished: string[];
-    };
+    scripts?: IScripts;
 }
+export declare function pageRequestDefaultsGet(): IPageRequest;
 /**
  * properties exposed to your custom ```scripts``` via ```window._pjscMeta``` *
  */
@@ -197,7 +297,7 @@ export interface IPdfHeaderFooter {
 /** The 'main' form of user request, allows specifying pages to load in order.  Later will provide other 'global' options such as geolocation choices. */
 export interface IUserRequest {
     /** array of pages you want to load, in order.  Only the last successfully loaded page will be rendered.*/
-    pages: PageRequest[];
+    pages: IPageRequest[];
     /** Use proxy servers for your request.  default=```false```.
      * set to ```true``` to enable our builtin proxy servers, or use the parameters found at [IProxyOptions](#_io_datatypes_.iuserrequest.iproxyoptions) for more control/options, including the ability to specify your own custom proxy server.
      * IMPORTANT:  for now, to use the builtin proxy servers, you must use the api endpoints found at  [api-static.phantomjscloud.com](http://api-static.phantomjscloud.com) This is because our proxy provider requires Whitelisting us by Static IP addresses.  This requirement will be removed after we exit Beta.
@@ -232,6 +332,8 @@ export interface IProxyCustomOptions {
 }
 /** This is returned to you when "outputAsJson=true".  */
 export interface IUserResponse {
+    /** the original request, without defaults applied.   to see the request with defaults, see ```pageResponses.pageRequest``` */
+    originalRequest: IUserRequest;
     /** a collection of load/processing information for each page you requested. */
     pageResponses: IPageResponse[];
     /** the rendered output of the last pageRequest */
@@ -291,7 +393,7 @@ export interface IUserResponse {
 /** Information about the page transaction (request and it's response).   */
 export interface IPageResponse {
     /** the request you sent, including defaults for any parameters you did not include */
-    pageRequest: PageRequest;
+    pageRequest: IPageRequest;
     /** information about the processing of your request */
     metrics: {
         pageStatus: string;

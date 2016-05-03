@@ -7,15 +7,119 @@ var __extends = (this && this.__extends) || function (d, b) {
 var refs = require("./refs");
 var Promise = refs.Promise;
 var PromiseRetry = refs.PromiseRetry;
-var ioDatatypes = require("./io-data-types");
+exports.ioDatatypes = require("./io-data-types");
 var _ = refs.lodash;
+/**
+ *  helper utils used by the phantomjscloud api.   will be moved to a utils module later
+ */
 var utils;
 (function (utils) {
+    /**
+     * options for the AutoscaleConsumer
+     */
+    var AutoscaleConsumerOptions = (function () {
+        function AutoscaleConsumerOptions() {
+            /** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=2 */
+            this.workerMin = 2;
+            /** maximum number of parallel workers.  default=30 */
+            this.workerMax = 30;
+            /** if there is pending work, how long (in ms) to wait before increasing our number of workers.  This should not be too fast otherwise you can overload the autoscaler.  default=3000 (3 seconds), which would result in 20 workers after 1 minute of operation on a very large work queue. */
+            this.workersLinearGrowthMs = 3000;
+            /** how long (in ms) for an idle worker (no work remaining) to wait before attempting to grab new work.  default=1000 (1 second) */
+            this.workerReaquireMs = 1000;
+            /** the max time a worker will be idle before disposing itself.  default=20000 (20 seconds) */
+            this.workerMaxIdleMs = 20000;
+        }
+        return AutoscaleConsumerOptions;
+    }());
+    utils.AutoscaleConsumerOptions = AutoscaleConsumerOptions;
+    /**
+     * allows consumption of an autoscaling process.  asynchronously executes work, scheduling the work to be executed in a graceful "ramping work up" fashion so to take advantage of the autoscaler increase-in-capacity features.
+     * technical details: enqueues all process requests into a central pool and executes workers on them.  if there is additional queued work, increases workers over time.
+     */
+    var AutoscaleConsumer = (function () {
+        function AutoscaleConsumer(
+            /** The "WorkerThread", this function processes work. it's execution is automatically managed by this object. */
+            _workProcessor, options) {
+            if (options === void 0) { options = {}; }
+            this._workProcessor = _workProcessor;
+            this.options = options;
+            this._pendingTasks = [];
+            this._workerCount = 0;
+            this._workerLastAddTime = new Date(0);
+            var defaultOptions = new AutoscaleConsumerOptions();
+            _.defaults(options, defaultOptions);
+        }
+        AutoscaleConsumer.prototype.process = function (input) {
+            var _this = this;
+            var toReturn = new Promise(function (resolve, reject) {
+                _this._pendingTasks.push({ input: input, resolve: resolve, reject: reject });
+            });
+            this._tryStartProcessing();
+            return toReturn;
+        };
+        AutoscaleConsumer.prototype._tryStartProcessing = function () {
+            var _this = this;
+            if (this._workerCount >= this.options.workerMax || this._pendingTasks.length === 0) {
+                return;
+            }
+            var nextAddTime = this._workerLastAddTime.getDate() + this.options.workersLinearGrowthMs;
+            var now = Date.now();
+            var timeToAddWorker = false;
+            if (this._workerCount < this.options.workerMin) {
+                timeToAddWorker = true;
+            }
+            if (now >= nextAddTime) {
+                //if we don't have much work remaining, don't add more workers
+                //if ((this._workerCount * this.options.workerMinimumQueueMultiplier) < this._pendingRequests.length)
+                timeToAddWorker = true;
+            }
+            if (timeToAddWorker === true) {
+                this._workerCount++;
+                this._workerLastAddTime = new Date();
+                setTimeout(function () { _this._workerLoop(); });
+            }
+        };
+        AutoscaleConsumer.prototype._workerLoop = function (idleMs) {
+            var _this = this;
+            if (idleMs === void 0) { idleMs = 0; }
+            if (this._pendingTasks.length === 0) {
+                //no work to do, dispose or wait
+                if (idleMs > this.options.workerMaxIdleMs) {
+                    //already idle too long, dispose
+                    this._workerLoop_disposeHelper();
+                    return;
+                }
+                else {
+                    //retry this workerLoop after a short idle time
+                    setTimeout(function () { _this._workerLoop(idleMs + _this.options.workerReaquireMs); }, this.options.workerReaquireMs);
+                }
+            }
+            var work = this._pendingTasks.shift();
+            Promise.try(function () {
+                return _this._workProcessor(work.input);
+            }).then(function (output) {
+                work.resolve(output);
+            }, function (error) {
+                work.reject(error);
+            });
+            //fire another loop next tick
+            setTimeout(function () { _this._workerLoop(); });
+            //since we had work to do, there might be more work to do/scale up workers for. fire a "try start processing"
+            this._tryStartProcessing();
+            return;
+        };
+        AutoscaleConsumer.prototype._workerLoop_disposeHelper = function () {
+            this._workerCount--;
+        };
+        return AutoscaleConsumer;
+    }());
+    utils.AutoscaleConsumer = AutoscaleConsumer;
     /**
  *  a helper for constructing reusable endpoint functions
  */
     var EzEndpointFunction = (function () {
-        function EzEndpointFunction(urlRoot, path, 
+        function EzEndpointFunction(origin, path, 
             /** default is to retry for up to 10 seconds, (no retries after 10 seconds) */
             retryOptions, 
             /** default is to timeout (err 545) after 60 seconds*/
@@ -35,20 +139,22 @@ var utils;
                     return null;
                 }
             }; }
-            this.urlRoot = urlRoot;
+            this.origin = origin;
             this.path = path;
             this.retryOptions = retryOptions;
             this.requestOptions = requestOptions;
             this.preRetryIntercept = preRetryIntercept;
         }
         EzEndpointFunction.prototype.toJson = function () {
-            return { urlRoot: this.urlRoot, path: this.path, retryOptions: this.retryOptions, requestOptions: this.requestOptions };
+            return { origin: this.origin, path: this.path, retryOptions: this.retryOptions, requestOptions: this.requestOptions };
         };
-        EzEndpointFunction.prototype.post = function (submitPayload, /**setting a key overrides the key put in ctor.requestOptions. */ customRequestOptions) {
+        EzEndpointFunction.prototype.post = function (submitPayload, /**setting a key overrides the key put in ctor.requestOptions. */ customRequestOptions, customOrigin, customPath) {
             var _this = this;
+            if (customOrigin === void 0) { customOrigin = this.origin; }
+            if (customPath === void 0) { customPath = this.path; }
             var lastErrorResult = null;
             return PromiseRetry(function () {
-                var endpoint = _this.urlRoot + _this.path;
+                var endpoint = customOrigin + customPath;
                 //log.debug("EzEndpointFunction axios.post", { endpoint });
                 var finalRequestOptions;
                 if (customRequestOptions == null || Object.keys(customRequestOptions).length === 0) {
@@ -90,10 +196,12 @@ var utils;
                 return Promise.reject(err);
             });
         };
-        EzEndpointFunction.prototype.get = function (/**setting a key overrides the key put in ctor.requestOptions. */ customRequestOptions) {
+        EzEndpointFunction.prototype.get = function (/**setting a key overrides the key put in ctor.requestOptions. */ customRequestOptions, customOrigin, customPath) {
             var _this = this;
+            if (customOrigin === void 0) { customOrigin = this.origin; }
+            if (customPath === void 0) { customPath = this.path; }
             return PromiseRetry(function () {
-                var endpoint = _this.urlRoot + _this.path;
+                var endpoint = customOrigin + customPath;
                 //log.debug("EzEndpointFunction axios.get", { endpoint });
                 //return axios.post<TRecievePayload>(endpoint, submitPayload, this.requestOptions) as any;
                 var finalRequestOptions;
@@ -136,6 +244,9 @@ var utils;
     }());
     utils.EzEndpointFunction = EzEndpointFunction;
 })(utils || (utils = {}));
+/**
+ * errors thrown by this module derive from this
+ */
 var PhantomJsCloudException = (function (_super) {
     __extends(PhantomJsCloudException, _super);
     function PhantomJsCloudException() {
@@ -143,49 +254,122 @@ var PhantomJsCloudException = (function (_super) {
     }
     return PhantomJsCloudException;
 }(Error));
-var PhantomJsCloud = (function () {
-    function PhantomJsCloud(apiKey, options) {
-        if (apiKey === void 0) { apiKey = "a-demo-key-with-low-quota-per-ip-address"; }
-        if (options === void 0) { options = {}; }
-        this.apiKey = apiKey;
-        this.options = options;
-        //
-        this.ezEndpoint = new utils.EzEndpointFunction(options.endpoint, "");
+exports.PhantomJsCloudException = PhantomJsCloudException;
+/**
+ * errors thrown by the BrowserApi derive from this
+ */
+var PhantomJsCloudBrowserApiException = (function (_super) {
+    __extends(PhantomJsCloudBrowserApiException, _super);
+    function PhantomJsCloudBrowserApiException(message, statusCode, payload, headers) {
+        _super.call(this, message);
+        this.statusCode = statusCode;
+        this.payload = payload;
+        this.headers = headers;
     }
-    PhantomJsCloud.prototype.requestSingle = function (singleRequest) {
-        var userRequest;
-        if (singleRequest.pages != null && _.isArray(singleRequest.pages)) {
-            userRequest = singleRequest;
+    return PhantomJsCloudBrowserApiException;
+}(PhantomJsCloudException));
+exports.PhantomJsCloudBrowserApiException = PhantomJsCloudBrowserApiException;
+/**
+ *  the defaults used if options are not passed to a new BrowserApi object.
+ */
+exports.defaultBrowserApiOptions = {
+    endpointOrigin: "https://PhantomJsCloud.com",
+    apiKey: "a-demo-key-with-low-quota-per-ip-address",
+};
+///** the results of PhantomJsCloud processing */
+//export interface IBrowserApiResult {
+//	/** your original request */
+//	userRequest: ioDatatypes.IUserRequest;
+//	userResponse: ioDatatypes.IUserResponse;
+//	statusCode: number;
+//	responseHeaders: { [key: string]: string };
+//	responseMeta: {
+//		creditCost: number;
+//		dailySubscriptionCreditsRemaining: number;
+//		prepaidCreditsRemaining: number;
+//		totalCreditsRemaining: number;
+//		contentName: string;
+//		contentStatusCode: number;
+//		contentUrl: string;
+//	}
+//}
+//let textUserResponse: ioDatatypes.IUserResponse;
+//textUserResponse.
+/**
+ * The PhantomJsCloud Browser Api
+ */
+var BrowserApi = (function () {
+    function BrowserApi(keyOrOptions) {
+        if (keyOrOptions === void 0) { keyOrOptions = {}; }
+        this._endpointPath = "/api/browser/v2/";
+        this._browserV2RequestezEndpoint = new utils.EzEndpointFunction();
+        if (typeof keyOrOptions === "string") {
+            this.options = { apiKey: keyOrOptions };
         }
         else {
-            userRequest = { pages: [singleRequest] };
+            this.options = keyOrOptions;
         }
-        if (userRequest.pages == null || _.isArray(userRequest.pages) !== true || userRequest.pages.length === 0) {
-            return Promise.reject(new PhantomJsCloudException("invalid input.  request not sent."));
-        }
-        return this.ezEndpoint.post(userRequest)
-            .then(function (axiosResponse) {
-            return Promise.resolve(axiosResponse.data);
+        _.defaults(this.options, exports.defaultBrowserApiOptions);
+        this._autoscaler = new utils.AutoscaleConsumer(this._task_worker);
+    }
+    /**
+     * the autoscaler worker function
+     * @param task
+     */
+    BrowserApi.prototype._task_worker = function (task) {
+        _.defaults(task.customOptions, this.options);
+        return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, this._endpointPath)
+            .then(function (httpResponse) {
+            //let headers: { [key: string]: string } = httpResponse.headers as any;
+            //let toReturn: IBrowserApiResult = {
+            //	userRequest: task.userRequest,
+            //	userResponse: httpResponse.data,
+            //	responseHeaders: headers,
+            //	statusCode: httpResponse.status,
+            //	responseMeta: {
+            //		contentName: headers["pjsc-content-name"],
+            //		contentStatusCode: parseInt(headers["pjsc-content-status-code"]),
+            //		contentUrl: headers["pjsc-content-url"],
+            //		creditCost: parseFloat(headers["pjsc-credit-cost"]),
+            //		dailySubscriptionCreditsRemaining: parseFloat(headers["pjsc-daily-subscription-credits-remaining"]),
+            //		prepaidCreditsRemaining: parseFloat(headers["pjsc-prepaid-credits-remaining"]),
+            //		totalCreditsRemaining: parseFloat(headers["pjsc-total-credits-remaining"]),
+            //	}
+            //};
+            return Promise.resolve(httpResponse.data);
         }, function (errResponse) {
-            var responsePayload;
-            if (errResponse.data == null) {
-                responsePayload = "NULL";
-            }
-            else {
-                responsePayload = JSON.stringify(errResponse.data);
-            }
-            var error = new PhantomJsCloudException(("request failed due to error " + errResponse.status.toString() + ".  reply from server=") + responsePayload);
-            error["statusCode"] = errResponse.status;
-            return Promise.reject(error);
+            var statusCode = errResponse.status;
+            var ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode.toString(), statusCode, errResponse.data, errResponse.headers);
+            return Promise.reject(ex);
         });
     };
-    return PhantomJsCloud;
+    BrowserApi.prototype.requestSingle = function (request, customOptions) {
+        if (customOptions === void 0) { customOptions = {}; }
+        var _request = request;
+        var userRequest;
+        if (_request.pages != null && _.isArray(_request.pages)) {
+            userRequest = _request;
+        }
+        else {
+            userRequest = { pages: [_request] };
+        }
+        //set outputAsJson
+        _.forEach(userRequest.pages, function (page) { page.outputAsJson = true; });
+        var task = {
+            userRequest: userRequest,
+            customOptions: customOptions
+        };
+        return this._autoscaler.process(task);
+    };
+    BrowserApi.prototype.requestBatch = function (requests) {
+        var _this = this;
+        var responsePromises = [];
+        _.forEach(requests, function (request) {
+            responsePromises.push(_this.requestSingle(request));
+        });
+        return responsePromises;
+    };
+    return BrowserApi;
 }());
-var PhantomJsCloud;
-(function (PhantomJsCloud) {
-    PhantomJsCloud.PageRequest = ioDatatypes.PageRequest;
-})(PhantomJsCloud || (PhantomJsCloud = {}));
-module.exports = PhantomJsCloud;
-//console.log("hello world");
-//export let out = "put"; 
+exports.BrowserApi = BrowserApi;
 //# sourceMappingURL=_main.js.map
