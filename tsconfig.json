@@ -18,7 +18,9 @@
     "watch": false,
     "moduleResolution": "node",
     "noImplicitReturns": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+        
+    "outDir": "./lib"
   },
   "exclude": [
     "node_modules",
