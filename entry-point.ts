@@ -1,2 +1,2 @@
-﻿import pjsc = require("./dev/_main.ts");
+﻿import pjsc = require("./dev/_main");
 export = pjsc;

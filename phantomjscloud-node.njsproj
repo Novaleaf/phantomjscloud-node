@@ -97,27 +97,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dev\" />
-    <Folder Include="node_modules\" />
-    <Folder Include="node_modules\typings\" />
-    <Folder Include="node_modules\typings\dist\" />
-    <Folder Include="node_modules\typings\dist\support\" />
-    <Folder Include="typings\" />
-    <Folder Include="typings\browser\" />
-    <Folder Include="typings\browser\ambient\" />
-    <Folder Include="typings\browser\ambient\axios\" />
-    <Folder Include="typings\browser\ambient\mocha\" />
-    <Folder Include="typings\browser\ambient\node\" />
-    <Folder Include="typings\browser\definitions\" />
-    <Folder Include="typings\browser\definitions\bluebird\" />
-    <Folder Include="typings\browser\definitions\lodash\" />
-    <Folder Include="typings\main\" />
-    <Folder Include="typings\main\ambient\" />
-    <Folder Include="typings\main\ambient\axios\" />
-    <Folder Include="typings\main\ambient\mocha\" />
-    <Folder Include="typings\main\ambient\node\" />
-    <Folder Include="typings\main\definitions\" />
-    <Folder Include="typings\main\definitions\bluebird\" />
-    <Folder Include="typings\main\definitions\lodash\" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />
