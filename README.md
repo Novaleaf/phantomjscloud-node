@@ -32,10 +32,10 @@ This library provides a simple and high quality mechanism for interacting with [
 		let browser = new phantomJsCloud.BrowserApi(apiKey);
 		
 		//the page you wish to render
-		let pageRequest: phantomJsCloud.ioDatatypes.IPageRequest = { url: "http://www.example.com" };
+		let pageRequest: phantomJsCloud.ioDatatypes.IPageRequest = { url: "http://www.example.com", renderType:"plainText" };
 		
 		//make a request to render a single page, returning the plain-text contents of the page.
-		browser.requestSingle({ url: "http://www.example.com", renderType:"plainText" })
+		browser.requestSingle(pageRequest)
 			.then((userResponse) => {
 				console.log(JSON.stringify({
 					//the content of the page you requested
