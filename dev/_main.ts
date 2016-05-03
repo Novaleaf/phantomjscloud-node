@@ -39,6 +39,11 @@ export interface IBrowserApiOptions {
 	endpointOrigin?: string;
 	/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/
 	apiKey?: string;
+
+	/**
+	 *  set to true to not show a warning for using demo keys.
+	 */
+	suppressDemoKeyWarning?: boolean;
 }
 /**
  *  the defaults used if options are not passed to a new BrowserApi object.
@@ -46,6 +51,7 @@ export interface IBrowserApiOptions {
 export let defaultBrowserApiOptions: IBrowserApiOptions = {
     endpointOrigin: "https://PhantomJsCloud.com",
     apiKey: "a-demo-key-with-low-quota-per-ip-address",
+	suppressDemoKeyWarning: false,
 }
 
 
@@ -77,7 +83,7 @@ export class BrowserApi {
 		}
 		_.defaults(this.options, defaultBrowserApiOptions);
 
-		if (this.options.apiKey === defaultBrowserApiOptions.apiKey) {
+		if (this.options.apiKey === defaultBrowserApiOptions.apiKey && this.options.suppressDemoKeyWarning !== true) {
 			console.warn("\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n");
 		}
 

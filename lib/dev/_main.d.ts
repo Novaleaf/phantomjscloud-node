@@ -23,6 +23,10 @@ export interface IBrowserApiOptions {
     endpointOrigin?: string;
     /**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/
     apiKey?: string;
+    /**
+     *  set to true to not show a warning for using demo keys.
+     */
+    suppressDemoKeyWarning?: boolean;
 }
 /**
  *  the defaults used if options are not passed to a new BrowserApi object.

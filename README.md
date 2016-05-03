@@ -69,8 +69,11 @@ submit multiple requests at the same time, and get an array of promises back.
 
 
 
-### Typescript
-If you use Visual Studio or VSCode the typings will automatically load when you ```import phantomjscloud = require("phantomjscloud");```
+### Typescript Typings
+If you use Visual Studio or VSCode the IntelliSense will automatically load when you: ```import phantomjscloud = require("phantomjscloud");``` 
+
+You do not need to load anything from the DefinitelyTyped nor Typings projects. 
+ 
 
 ## Technical details
 
