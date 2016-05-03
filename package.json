@@ -1,6 +1,6 @@
 {
   "name": "phantomjscloud",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PhantomJs Cloud Client API Library for Node.js",
   "author": {
     "name": "PhantomJs Cloud",
