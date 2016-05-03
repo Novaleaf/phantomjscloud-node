@@ -32,6 +32,12 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
+  <PropertyGroup>
+   <!-- Specifies the directories which are ignored. Any paths which contain these directory names
+      will be ignored. The directory name must completely match and no wild cards are allowed
+   -->
+   <AnalysisIgnoredDirectories>bower_components;node_modules;typings;</AnalysisIgnoredDirectories>
+</PropertyGroup>
   <ItemGroup>
     <Content Include="tsconfig.json" />
     <TypeScriptCompile Include="dev\io-data-types.ts" />
@@ -44,56 +50,6 @@
     <Content Include="README.md" />
     <TypeScriptCompile Include="dev\_main.ts" />
     <TypeScriptCompile Include="dev\refs.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\aliases.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\aliases.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-bundle.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-bundle.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-init.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-init.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-install.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-install.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-list.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-list.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-open.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-open.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-prune.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-prune.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-search.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-search.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-uninstall.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-uninstall.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-view.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin-view.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\bin.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\support\cli.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\support\cli.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\typings.d.ts" />
-    <TypeScriptCompile Include="node_modules\typings\dist\typings.d.ts" />
-    <TypeScriptCompile Include="typings\browser.d.ts" />
-    <TypeScriptCompile Include="typings\browser.d.ts" />
-    <TypeScriptCompile Include="typings\browser\ambient\axios\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\ambient\axios\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\ambient\mocha\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\ambient\mocha\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\ambient\node\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\ambient\node\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\definitions\bluebird\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\definitions\bluebird\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\definitions\lodash\index.d.ts" />
-    <TypeScriptCompile Include="typings\browser\definitions\lodash\index.d.ts" />
-    <TypeScriptCompile Include="typings\main.d.ts" />
-    <TypeScriptCompile Include="typings\main.d.ts" />
-    <TypeScriptCompile Include="typings\main\ambient\axios\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\ambient\axios\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\ambient\mocha\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\ambient\mocha\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\ambient\node\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\ambient\node\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\definitions\bluebird\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\definitions\bluebird\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\definitions\lodash\index.d.ts" />
-    <TypeScriptCompile Include="typings\main\definitions\lodash\index.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dev\" />
