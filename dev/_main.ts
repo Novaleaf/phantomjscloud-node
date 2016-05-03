@@ -375,6 +375,9 @@ export class BrowserApi {
 		}
 		_.defaults(this.options, defaultBrowserApiOptions);
 
+		if (this.options.apiKey === defaultBrowserApiOptions.apiKey) {
+			console.warn("WARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.");
+		}
 
 		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker.bind(this));
 	}

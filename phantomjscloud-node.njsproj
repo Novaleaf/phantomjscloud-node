@@ -12,7 +12,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>067e52e2-991c-4689-a197-159dd3870725</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>entry-point.ts</StartupFile>
+    <StartupFile>lib\entry-point.js</StartupFile>
     <StartWebBrowser>False</StartWebBrowser>
     <SearchPath>
     </SearchPath>
