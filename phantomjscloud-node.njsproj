@@ -33,11 +33,11 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
-   <!-- Specifies the directories which are ignored. Any paths which contain these directory names
+    <!-- Specifies the directories which are ignored. Any paths which contain these directory names
       will be ignored. The directory name must completely match and no wild cards are allowed
    -->
-   <AnalysisIgnoredDirectories>bower_components;node_modules;typings;</AnalysisIgnoredDirectories>
-</PropertyGroup>
+    <AnalysisIgnoredDirectories>bower_components;node_modules;typings;</AnalysisIgnoredDirectories>
+  </PropertyGroup>
   <ItemGroup>
     <Content Include="tsconfig.json" />
     <TypeScriptCompile Include="dev\io-data-types.ts" />
