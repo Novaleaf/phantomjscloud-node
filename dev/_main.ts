@@ -1,14 +1,15 @@
-﻿import refs = require("./refs");
+﻿
 
+import refs = require("./refs");
 import Promise = refs.Promise;
 import PromiseRetry = refs.PromiseRetry;
-
 
 
 export import ioDatatypes = require("./io-data-types");
 
 
-import _ = refs.lodash;
+//import _ = refs.lodash;
+let _ = refs.lodash;
 
 /**
  *  helper utils used by the phantomjscloud api.   will be moved to a utils module later
@@ -69,7 +70,7 @@ module utils {
 
 
 		private _tryStartProcessing() {
-
+			debugLog("AutoscaleConsumer._tryStartProcessing called");
 			if (this._workerCount >= this.options.workerMax || this._pendingTasks.length === 0) {
 				return;
 			}
@@ -100,14 +101,15 @@ module utils {
 
 			if (this._pendingTasks.length === 0) {
 				//no work to do, dispose or wait
-				if (idleMs > this.options.workerMaxIdleMs) {
+				//also instantly dispose of the worker if there's the minimum.
+				if (idleMs > this.options.workerMaxIdleMs || this._workerCount<=this.options.workerMin) { 
 					//already idle too long, dispose
 					this._workerLoop_disposeHelper();
-					return;
 				} else {
 					//retry this workerLoop after a short idle time
 					setTimeout(() => { this._workerLoop(idleMs + this.options.workerReaquireMs) }, this.options.workerReaquireMs);
 				}
+				return;
 			}
 			let work = this._pendingTasks.shift();
 
@@ -172,45 +174,58 @@ module utils {
 		}
 
 		public post(submitPayload?: TSubmitPayload, /**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>, customOrigin: string = this.origin, customPath: string = this.path): Promise<Axios.AxiosXHR<TRecievePayload>> {
-
+			debugLog("EzEndpointFunction .post() called");
 			let lastErrorResult: any = null;
 			return PromiseRetry<Axios.AxiosXHR<TRecievePayload>>(() => {
-				let endpoint = customOrigin + customPath;
-				//log.debug("EzEndpointFunction axios.post", { endpoint });
+
+				try {
+
+					debugLog("EzEndpointFunction .post() in PromiseRetry block");
+					let endpoint = customOrigin + customPath;
+					//log.debug("EzEndpointFunction axios.post", { endpoint });
 
 
-				let finalRequestOptions: Axios.AxiosXHRConfigBase<TRecievePayload>;
-				if (customRequestOptions == null || Object.keys(customRequestOptions).length === 0) {
-					finalRequestOptions = this.requestOptions;
-				} else {
-					finalRequestOptions = _.defaults({}, customRequestOptions, this.requestOptions);
+					let finalRequestOptions: Axios.AxiosXHRConfigBase<TRecievePayload>;
+					if (customRequestOptions == null || Object.keys(customRequestOptions).length === 0) {
+						finalRequestOptions = this.requestOptions;
+					} else {
+						finalRequestOptions = _.defaults({}, customRequestOptions, this.requestOptions);
+					}
+
+					return (refs.Axios.post<TRecievePayload>(endpoint, submitPayload, finalRequestOptions
+					) as any as Promise<Axios.AxiosXHR<TRecievePayload>>)
+						.then((result) => {
+							debugLog("EzEndpointFunction .post() got valid response");
+							return Promise.resolve(result);
+						}, (err: Axios.AxiosXHR<TRecievePayload>) => {
+							debugLog("EzEndpointFunction .post() got err");
+							//log.info(err);
+							if (err.status === 0 && err.statusText === "" && err.data === "" as any) {
+								//log.debug("EzEndpointFunction axios.post timeout.", { endpoint });
+								err.status = 524;
+								err.statusText = "A Timeout Occurred";
+								err.data = "Axios->EzEndpointFunction timeout." as any;
+							}
+							if (this.preRetryIntercept != null) {
+								let interceptResult = this.preRetryIntercept(err);
+								if (interceptResult != null) {
+									let stopError = new PromiseRetry.StopError("preRetryIntercept abort");
+									(stopError as any)["interceptResult"] = interceptResult;
+									return Promise.reject(stopError);
+								}
+							}
+							lastErrorResult = err;
+							return Promise.reject(err);
+						});
+
+				} catch (errThrown) {
+					debugLog("EzEndpointFunction .post() in root promiseRetry block,  got errThrown",errThrown.toString());
+					throw errThrown;
 				}
 
-				return (axios.post<TRecievePayload>(endpoint, submitPayload, finalRequestOptions
-				) as any as Promise<Axios.AxiosXHR<TRecievePayload>>)
-					.then((result) => {
-						return Promise.resolve(result);
-					}, (err: Axios.AxiosXHR<TRecievePayload>) => {
-						//log.info(err);
-						if (err.status === 0 && err.statusText === "" && err.data === "" as any) {
-							//log.debug("EzEndpointFunction axios.post timeout.", { endpoint });
-							err.status = 524;
-							err.statusText = "A Timeout Occurred";
-							err.data = "Axios->EzEndpointFunction timeout." as any;
-						}
-						if (this.preRetryIntercept != null) {
-							let interceptResult = this.preRetryIntercept(err);
-							if (interceptResult != null) {
-								let stopError = new PromiseRetry.StopError("preRetryIntercept abort");
-								(stopError as any)["interceptResult"] = interceptResult;
-								return Promise.reject(stopError);
-							}
-						}
-						lastErrorResult = err;
-						return Promise.reject(err);
-					});
 			}, this.retryOptions)
 				.catch((err: any) => {
+					debugLog("EzEndpointFunction .post()  retry catch");
 					if (err.interceptResult != null) {
 						return err.interceptResult;
 					}
@@ -222,6 +237,7 @@ module utils {
 				});
 		}
 		public get(/**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>, customOrigin: string = this.origin, customPath: string = this.path): Promise<Axios.AxiosXHR<TRecievePayload>> {
+			debugLog("EzEndpointFunction .get() called");
 			return PromiseRetry<Axios.AxiosXHR<TRecievePayload>>(() => {
 				let endpoint = customOrigin + customPath;
 				//log.debug("EzEndpointFunction axios.get", { endpoint });
@@ -282,12 +298,25 @@ export class PhantomJsCloudBrowserApiException extends PhantomJsCloudException {
 	}
 }
 
+
+function debugLog(...args: any[]): void {
+	if (isDebug !== true) {
+		return;
+	}
+	console.log("\n");
+	console.log("\n=====================================");
+	console.log.apply(console, args);
+	console.log("\n");
+}
+
+
+/**set to true to enable debug outputs */
+export let isDebug = false;
 export interface IBrowserApiOptions {
 	/** the endpoint you want to point at, for example using with a private cloud.  if not set, will default to the PhantomJsCloud public api. */
 	endpointOrigin?: string;
 	/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/
 	apiKey?: string;
-	//isDebug?: boolean;
 }
 /**
  *  the defaults used if options are not passed to a new BrowserApi object.
@@ -347,7 +376,7 @@ export class BrowserApi {
 		_.defaults(this.options, defaultBrowserApiOptions);
 
 
-		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker);
+		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker.bind(this));
 	}
 
 	private _autoscaler: utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>;
@@ -358,11 +387,17 @@ export class BrowserApi {
 	 */
 	private _task_worker(task: IBrowserApiTask): PromiseLike<ioDatatypes.IUserResponse> {
 
+		debugLog("_task_worker START");
 		_.defaults(task.customOptions, this.options);
 
-		return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, this._endpointPath)
-			.then((httpResponse) => {
+		/**
+		 *  path including apiKey
+		 */
+		let finalPath = this._endpointPath + task.customOptions.apiKey + "/";
 
+		return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, finalPath)
+			.then((httpResponse) => {
+				debugLog("_task_worker httpResponse", httpResponse.data);
 				//let headers: { [key: string]: string } = httpResponse.headers as any;
 
 				//let toReturn: IBrowserApiResult = {
@@ -385,10 +420,12 @@ export class BrowserApi {
 				return Promise.resolve(httpResponse.data);
 
 			}, (errResponse: Axios.AxiosXHR<ioDatatypes.IUserResponse>) => {
-
+				debugLog("_task_worker errResponse", errResponse);
 				let statusCode = errResponse.status;
 				let ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode.toString(), statusCode, errResponse.data, errResponse.headers as any);
 				return Promise.reject(ex);
+			}).finally(() => {
+				debugLog("_task_worker FINISH");
 			});
 
 	}
@@ -396,6 +433,7 @@ export class BrowserApi {
 
     public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {}): PromiseLike<ioDatatypes.IUserResponse> {
 
+		debugLog("requestSingle");
 		let _request = request as any;
 		let userRequest: ioDatatypes.IUserRequest;
 		if (_request.pages != null && _.isArray(_request.pages)) {
