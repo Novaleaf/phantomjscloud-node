@@ -1,4 +1,5 @@
 export import ioDatatypes = require("./io-data-types");
+export declare function setDebug(isDebug: boolean): void;
 /**
  * errors thrown by this module derive from this
  */
@@ -17,8 +18,6 @@ export declare class PhantomJsCloudBrowserApiException extends PhantomJsCloudExc
         [key: string]: string;
     });
 }
-/**set to true to enable debug outputs */
-export declare let isDebug: boolean;
 export interface IBrowserApiOptions {
     /** the endpoint you want to point at, for example using with a private cloud.  if not set, will default to the PhantomJsCloud public api. */
     endpointOrigin?: string;

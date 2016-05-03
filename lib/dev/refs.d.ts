@@ -1,4 +1,3 @@
-/// <reference path="../../typings/main.d.ts" />
 export import Promise = require("bluebird");
 export import Axios = require("axios");
 export import lodash = require("lodash");

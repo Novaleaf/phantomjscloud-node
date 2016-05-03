@@ -41,7 +41,7 @@
   <ItemGroup>
     <Content Include="tsconfig.json" />
     <TypeScriptCompile Include="dev\io-data-types.ts" />
-    <TypeScriptCompile Include="dev\_test-main.ts">
+    <TypeScriptCompile Include="dev\utils.ts">
       <SubType>Code</SubType>
       <TestFramework>Mocha</TestFramework>
     </TypeScriptCompile>
