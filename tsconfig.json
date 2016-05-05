@@ -20,7 +20,8 @@
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,
 
-    "outDir": "./lib"
+    "outDir": "./lib",
+    "rootDir": "./dev"
 
   },
   "exclude": [
