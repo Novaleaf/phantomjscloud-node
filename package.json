@@ -1,9 +1,10 @@
 {
   "name": "phantomjscloud",
   "version": "1.0.3",
-  "description": "PhantomJs Cloud Client API Library for Node.js",
+  "description": "Official PhantomJs Cloud Client API Library for Node.js",
   "keywords": [
     "PhantomJs",
+    "Phantom",
     "Browser",
     "Browser Api",
     "Headless Browser",
