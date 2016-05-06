@@ -124,7 +124,7 @@ export class BrowserApi {
 	}
 
 
-    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {},callback?:(err:Error,result:ioDatatypes.IUserResponse)=>void): PromiseLike<ioDatatypes.IUserResponse> {
+    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {}, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse> {
 
 		utils.debugLog("requestSingle");
 		let _request = request as any;
@@ -158,13 +158,18 @@ export class BrowserApi {
 
 
 
-	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[]): PromiseLike<ioDatatypes.IUserResponse>[] {
+	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions: IBrowserApiOptions = {}, callback?: (err: Error, item: { request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest); result: ioDatatypes.IUserResponse }) => void): PromiseLike<ioDatatypes.IUserResponse>[] {
 
 		let responsePromises: PromiseLike<ioDatatypes.IUserResponse>[] = [];
-
-		_.forEach(requests, (request) => {
-			responsePromises.push(this.requestSingle(request));
-		});
+		if (callback != null) {
+			_.forEach(requests, (request) => {
+				responsePromises.push(this.requestSingle(request, customOptions, (err, result) => { callback(err, { request, result }); }));
+			});
+		} else {
+			_.forEach(requests, (request) => {
+				responsePromises.push(this.requestSingle(request, customOptions));
+			});
+		}
 
 		//if (callback != null) {
 		//	Promise.all(responsePromises)
