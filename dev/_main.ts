@@ -124,7 +124,7 @@ export class BrowserApi {
 	}
 
 
-    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {}): PromiseLike<ioDatatypes.IUserResponse> {
+    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {},callback?:(err:Error,result:ioDatatypes.IUserResponse)=>void): PromiseLike<ioDatatypes.IUserResponse> {
 
 		utils.debugLog("requestSingle");
 		let _request = request as any;
@@ -142,7 +142,18 @@ export class BrowserApi {
 			customOptions
 		};
 
-		return this._autoscaler.process(task);
+		return this._autoscaler.process(task)
+			.then((result) => {
+				if (callback != null) {
+					callback(null, result);
+				}
+				return Promise.resolve(result);
+			}, (err) => {
+				if (callback != null) {
+					callback(err, null);
+				}
+				return Promise.reject(err);
+			});
 	}
 
 
@@ -154,6 +165,21 @@ export class BrowserApi {
 		_.forEach(requests, (request) => {
 			responsePromises.push(this.requestSingle(request));
 		});
+
+		//if (callback != null) {
+		//	Promise.all(responsePromises)
+		//		.then((results) => {
+		//			if (callback != null) {
+		//				callback(null, results);
+		//			}
+		//			return Promise.resolve(results);
+		//		}, (err) => {
+		//			if (callback != null) {
+		//				callback(err, null);
+		//			}
+		//			return Promise.reject(err);
+		//		});
+		//}
 
 		return responsePromises;
 	}

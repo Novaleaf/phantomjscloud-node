@@ -47,6 +47,6 @@ export declare class BrowserApi {
      * @param task
      */
     private _task_worker(task);
-    requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions): PromiseLike<ioDatatypes.IUserResponse>;
+    requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
     requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[]): PromiseLike<ioDatatypes.IUserResponse>[];
 }

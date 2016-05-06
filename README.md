@@ -6,7 +6,8 @@ This library provides a simple and high quality mechanism for interacting with [
 
 
 ## Requirements
-1. Use [Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).  We use [Bluebird](http://bluebirdjs.com/).
+1. Internet access.  This works in Node.js and Browsers (via Browserify or Webpack).
+	
 
 
 
@@ -50,23 +51,30 @@ This library provides a simple and high quality mechanism for interacting with [
 
 ## Options
 
-### ```var browser = phantomJsCloud.BrowserApi(apiKey:string | options:{apiKey:string; endpointOrigin:string}) => BrowserApi;```
-Optional.  For Setting ApiKey or Endpoint.
+### ```var browser = phantomJsCloud.BrowserApi(apiKeyOrOptions?) : BrowserApi;```
+Constructing the browserApi, and optionally for setting default configuration options.
 
-The ```BrowserApi``` class constructor takes in either an ```apiKey:string``` or an ```options:{apiKey:string; endpointOrigin:string}``` object.  if no argument is passed, the default "demo" key is used with the public cloud endpoint.
+- **```apiKeyOrOptions```**: Optional.  If set, can be either an ```apiKey:string``` or an ```options``` object with the parameters ```{apiKey?; endpointOrigin?}```.  
+ - ```apiKey:string``` If not set, the default "demo" key is used with the public cloud endpoint. If you use the default demo key, you get 100 Pages/Day.  If you sign up for an account at [Dashboard.PhantomJsCloud.com](https://Dashboard.PhantomJsCloud.com) you will get 500 Pages/Day free.
+  - ```endpointOrigin:string``` Used if you subscribe to a Private Cloud + SLA.  Defaults to the PhantomJs Cloud Public Endpoint.
+- **```RETURNS```**: A ```BrowserApi``` object that is used to make the requests to the PhantomJs Cloud.
 
-If you use the default demo key, you get 100 Pages/Day.  If you sign up for an account at [Dashboard.PhantomJsCloud.com](https://Dashboard.PhantomJsCloud.com) you will get 500 Pages/Day free.
-
-### ```browser.requestSingle(request: IPageRequest | IUserRequest ) => Promise<IUserResponse>```
+### ```browser.requestSingle(request, customOptions?, callback?) : Promise<IUserResponse>```
 For making a single request.
 
-The ```request``` can either be a ```IPageRequest``` or ```IUserRequest``` object.  See  [https://phantomjscloud.com/docs/](https://phantomjscloud.com/docs/) for details
+- **```request```**:  Either be a [```IPageRequest```](https://phantomjscloud.com/docs/#_io_datatypes_.ipagerequest) or [```IUserRequest```](https://phantomjscloud.com/docs/index.html#_io_datatypes_.iuserrequest) object.  See  [https://phantomjscloud.com/docs/](https://phantomjscloud.com/docs/) for full details.  [The request default values can be seen here.](https://phantomjscloud.com/examples/helpers/pageRequestDefaults)
+- **```customOptions```**: Optional.  can override the options set in the ```BrowserApi``` class constructor.
+- **```callback```**:  Optional.  For people who don't use promises (not recommended!)  If you use this, the function should have the signature ```(err: Error, result: IUserResponse) => void```
+- **```RETURNS```**: A Promise returning a [```IUserResponse```](https://phantomjscloud.com/docs/index.html#_io_datatypes_.iuserresponse).      
 
-[The request default values can be seen here.](https://phantomjscloud.com/examples/helpers/pageRequestDefaults)
 
-### ```browser.requestBatch(requests: (IPageRequest | IUserRequest)[] ) => Promise<IUserResponse>[]```
-submit multiple requests at the same time, and get an array of promises back.  
+### ```browser.requestBatch(requests, customOptions?, callback? ) : Promise<IUserResponse>[]```
+Submit multiple requests at the same time, and get an array of promises back.  
 
+- **```requests```**:  An array.  Each element should be either be a [```IPageRequest```](https://phantomjscloud.com/docs/#_io_datatypes_.ipagerequest) or [```IUserRequest```](https://phantomjscloud.com/docs/index.html#_io_datatypes_.iuserrequest) object.  
+- **```customOptions```**: Optional.  can override the options set in the ```BrowserApi``` class constructor.
+- **```callback```**:  Optional.  For people who don't use promises (not recommended!)  If you use this, the function should have the signature ```(err: Error, item: {request, result}) => void```  This will be called once for each request sent.
+- **```RETURNS```**: An array of Promises.  Use a construct like [```bluebird.all()```](http://bluebirdjs.com/docs/api/promise.all.html) to wait for all to finish if you wish.
 
 
 ### Typescript Typings
@@ -77,7 +85,7 @@ You do not need to load anything from the DefinitelyTyped nor Typings projects.
 
 ## Technical details
 
-Internally we pool all requests and execute in a FIFO fashion.  If there are pending requests, we gracefully ramp-up the rate of requests to match PhantomJsCloud's autoscale capacity. 
+Internally this library will pool all requests and execute in a FIFO fashion.  The number of parallel requests increases automatically:  We gracefully ramp-up the rate of requests to match PhantomJsCloud's autoscale capacity. 
 
 ## Roadmap
 
