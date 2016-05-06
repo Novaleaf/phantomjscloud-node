@@ -1,8 +1,14 @@
 {
   "name": "phantomjscloud",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "PhantomJs Cloud Client API Library for Node.js",
-  "keywords": [ "PhantomJs", "Browser", "Browser Api", "Headless Browser", "Typescript" ],
+  "keywords": [
+    "PhantomJs",
+    "Browser",
+    "Browser Api",
+    "Headless Browser",
+    "Typescript"
+  ],
   "homepage": "https://github.com/Novaleaf/phantomjscloud-node",
   "bugs": {
     "email": "support@PhantomJsCloud.com",
@@ -28,5 +34,5 @@
     "bluebird-retry": "^0.6.1",
     "lodash": "^4.11.1"
   },
-  "devDependencies": { }
+  "devDependencies": {}
 }
