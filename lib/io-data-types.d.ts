@@ -1,6 +1,6 @@
 /**
- * @hidden
- */
+* @hidden
+*/
 export interface IProcessManagerOptions {
     /** where input files are read from.
      * must already exist.  can have pending inputs in it upon startup.

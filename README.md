@@ -22,10 +22,13 @@ This library provides a simple and high quality mechanism for interacting with [
 		import phantomJsCloud = require("phantomjscloud");
 		var browser = phantomJsCloud.BrowserApi();
 		
-		browser.requestSingle({ url: "http://www.example.com", renderType:"plainText" })
-			.then((userResponse) => {
-				console.log(JSON.stringify(userResponse.content));
-			});
+		browser.requestSingle({ url: "http://www.example.com", renderType: "plainText" }, (err, userResponse) => {
+			//can use a callback like this example, or a Promise (see the Typescript example below)
+			if (err != null) {
+				throw err;
+			}
+			console.log(JSON.stringify(userResponse.content));
+		});
 
 	**or a slightly more complex example using [Typescript](https://www.typescriptlang.org/)**:
 

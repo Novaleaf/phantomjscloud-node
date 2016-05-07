@@ -122,11 +122,28 @@ export class BrowserApi {
 			});
 
 	}
-
-
-    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions: IBrowserApiOptions = {}, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse> {
+	/**
+	 * make a single browser request (PhantomJs call)
+	 * @param request
+	 * @param callback
+	 */
+	public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
+    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
+    public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse> {
 
 		utils.debugLog("requestSingle");
+
+		if (callback == null && customOptions != null) {
+			//handle function overload
+			if (typeof customOptions == "function") {
+				callback = customOptions as any;
+				customOptions = null;
+			}
+		}
+		if (customOptions == null) {
+			customOptions = {};
+		}
+
 		let _request = request as any;
 		let userRequest: ioDatatypes.IUserRequest;
 		if (_request.pages != null && _.isArray(_request.pages)) {
@@ -156,9 +173,22 @@ export class BrowserApi {
 			});
 	}
 
+	/**
+	 * make more than 1 browser request (PhantomJs call).  These are executed in parallel and is already optimized for PhantomJs Cloud auto-scaling, (The more your requests, the faster they will process.)
+	 * @param requests
+	 * @param callback
+	 */
+	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], callback?: (err: Error, item: { request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest); result: ioDatatypes.IUserResponse }) => void): PromiseLike<ioDatatypes.IUserResponse>[];
+	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions?: IBrowserApiOptions, callback?: (err: Error, item: { request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest); result: ioDatatypes.IUserResponse }) => void): PromiseLike<ioDatatypes.IUserResponse>[];
+	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions?: IBrowserApiOptions, callback?: (err: Error, item: { request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest); result: ioDatatypes.IUserResponse }) => void): PromiseLike<ioDatatypes.IUserResponse>[] {
 
-
-	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions: IBrowserApiOptions = {}, callback?: (err: Error, item: { request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest); result: ioDatatypes.IUserResponse }) => void): PromiseLike<ioDatatypes.IUserResponse>[] {
+		if (callback == null && customOptions != null) {
+			//handle function overload
+			if (typeof customOptions == "function") {
+				callback = customOptions as any;
+				customOptions = null;
+			}
+		}
 
 		let responsePromises: PromiseLike<ioDatatypes.IUserResponse>[] = [];
 		if (callback != null) {

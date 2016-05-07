@@ -47,7 +47,22 @@ export declare class BrowserApi {
      * @param task
      */
     private _task_worker(task);
+    /**
+     * make a single browser request (PhantomJs call)
+     * @param request
+     * @param callback
+     */
+    requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
     requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
+    /**
+     * make more than 1 browser request (PhantomJs call).  These are executed in parallel and is already optimized for PhantomJs Cloud auto-scaling, (The more your requests, the faster they will process.)
+     * @param requests
+     * @param callback
+     */
+    requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], callback?: (err: Error, item: {
+        request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest);
+        result: ioDatatypes.IUserResponse;
+    }) => void): PromiseLike<ioDatatypes.IUserResponse>[];
     requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions?: IBrowserApiOptions, callback?: (err: Error, item: {
         request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest);
         result: ioDatatypes.IUserResponse;
