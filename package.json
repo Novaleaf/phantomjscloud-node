@@ -10,7 +10,7 @@
     "Headless Browser",
     "Typescript",
     "parallel",
-    "async",
+    "async"
   ],
   "homepage": "https://github.com/Novaleaf/phantomjscloud-node",
   "bugs": {
