@@ -1,12 +1,14 @@
-# phantomjs cloud
+# PhantomJsCloud
 
 
-This library provides a simple and high quality mechanism for interacting with [PhantomJs](http://PhantomJs.org) via Node.  It leverages the [PhantomJs Cloud](https://PhantomJsCloud.com) Service to allow multiple calls in parallel at high performance.
+This library provides a simple and high quality mechanism for interacting with [PhantomJs](http://PhantomJs.org) via Node.  It leverages [PhantomJsCloud.com](https://PhantomJsCloud.com) *(A Headless Browser Service)* to allow multiple calls in parallel at high performance.
 
 
 
 ## Requirements
 -  Internet access.  
+
+***Optional***: Get an ApiKey by creating an account at [PhantomJsCloud.com](https://PhantomJsCloud.com) 
 
 ## Platforms
 - This works in Node.js and Browsers (via Browserify or Webpack).
@@ -19,8 +21,8 @@ This library provides a simple and high quality mechanism for interacting with [
 1. **Install**:  ```npm install phantomjscloud --save```
 2. **Use**:
 
-		import phantomJsCloud = require("phantomjscloud");
-		var browser = phantomJsCloud.BrowserApi();
+		var phantomJsCloud = require("phantomjscloud");
+		var browser = new phantomJsCloud.BrowserApi();
 		
 		browser.requestSingle({ url: "http://www.example.com", renderType: "plainText" }, (err, userResponse) => {
 			//can use a callback like this example, or a Promise (see the Typescript example below)
@@ -61,7 +63,7 @@ This library provides a simple and high quality mechanism for interacting with [
 Constructing the browserApi, and optionally for setting default configuration options.
 
 - **```apiKeyOrOptions```**: Optional.  If set, can be either an ```apiKey:string``` or an ```options``` object with the parameters ```{apiKey?; endpointOrigin?}```.  
- - ```apiKey:string``` If not set, the default "demo" key is used with the public cloud endpoint. If you use the default demo key, you get 100 Pages/Day.  If you sign up for an account at [Dashboard.PhantomJsCloud.com](https://Dashboard.PhantomJsCloud.com) you will get 500 Pages/Day free.
+ - ```apiKey:string``` If not set, the default "demo" key is used with the public cloud endpoint. If you use the default demo key, you get 100 Pages/Day.  If you sign up for an account at [PhantomJsCloud.com](https://PhantomJsCloud.com) you will get 500 Pages/Day free.
   - ```endpointOrigin:string``` Used if you subscribe to a Private Cloud + SLA.  Defaults to the PhantomJs Cloud Public Endpoint.
 - **```RETURNS```**: A ```BrowserApi``` object that is used to make the requests to the PhantomJs Cloud.
 
