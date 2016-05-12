@@ -70,16 +70,16 @@ Constructing the browserApi, and optionally for setting default configuration op
 ### ```browser.requestSingle(request, customOptions?, callback?) : Promise<IUserResponse>```
 For making a single request.
 
-- **```request```**:  Either be a [```IPageRequest```](https://phantomjscloud.com/docs/#_io_datatypes_.ipagerequest) or [```IUserRequest```](https://phantomjscloud.com/docs/index.html#_io_datatypes_.iuserrequest) object.  See  [https://phantomjscloud.com/docs/](https://phantomjscloud.com/docs/) for full details.  [The request default values can be seen here.](https://phantomjscloud.com/examples/helpers/pageRequestDefaults)
+- **```request```**:  Either be a [```IPageRequest```](https://phantomjscloud.com/docs/http-api/#_io_datatypes_.ipagerequest) or [```IUserRequest```](https://phantomjscloud.com/docs/http-api/index.html#_io_datatypes_.iuserrequest) object.  See  [https://phantomjscloud.com/docs/http-api/](https://phantomjscloud.com/docs/http-api/) for full details.  [The request default values can be seen here.](https://phantomjscloud.com/examples/helpers/pageRequestDefaults)
 - **```customOptions```**: Optional.  can override the options set in the ```BrowserApi``` class constructor.
 - **```callback```**:  Optional.  For people who don't use promises.  If you use this, the function should have the signature ```(err: Error, result: IUserResponse) => void```
-- **```RETURNS```**: A Promise returning a [```IUserResponse```](https://phantomjscloud.com/docs/index.html#_io_datatypes_.iuserresponse).      
+- **```RETURNS```**: A Promise returning a [```IUserResponse```](https://phantomjscloud.com/docs/http-api/index.html#_io_datatypes_.iuserresponse).      
 
 
 ### ```browser.requestBatch(requests, customOptions?, callback? ) : Promise<IUserResponse>[]```
 Submit multiple requests at the same time, and get an array of promises back.  
 
-- **```requests```**:  An array.  Each element should be either be a [```IPageRequest```](https://phantomjscloud.com/docs/#_io_datatypes_.ipagerequest) or [```IUserRequest```](https://phantomjscloud.com/docs/index.html#_io_datatypes_.iuserrequest) object.  
+- **```requests```**:  An array.  Each element should be either be a [```IPageRequest```](https://phantomjscloud.com/docs/http-api/#_io_datatypes_.ipagerequest) or [```IUserRequest```](https://phantomjscloud.com/docs/http-api/index.html#_io_datatypes_.iuserrequest) object.  
 - **```customOptions```**: Optional.  can override the options set in the ```BrowserApi``` class constructor.
 - **```callback```**:  Optional.  For people who don't use promises.  If you use this, the function should have the signature ```(err: Error, item: {request, result}) => void```  This will be called once for each request sent.
 - **```RETURNS```**: An array of Promises.  Use a construct like [```bluebird.all()```](http://bluebirdjs.com/docs/api/promise.all.html) to wait for all to finish if you wish.
