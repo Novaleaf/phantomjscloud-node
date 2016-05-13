@@ -59,7 +59,7 @@ This library provides a simple and high quality mechanism for interacting with [
 
 ## Options
 
-### ```var browser = phantomJsCloud.BrowserApi(apiKeyOrOptions?) : BrowserApi;```
+### ```var browser = new phantomJsCloud.BrowserApi(apiKeyOrOptions?) : BrowserApi;```
 Constructing the browserApi, and optionally for setting default configuration options.
 
 - **```apiKeyOrOptions```**: Optional.  If set, can be either an ```apiKey:string``` or an ```options``` object with the parameters ```{apiKey?; endpointOrigin?}```.  
@@ -84,11 +84,151 @@ Submit multiple requests at the same time, and get an array of promises back.
 - **```callback```**:  Optional.  For people who don't use promises.  If you use this, the function should have the signature ```(err: Error, item: {request, result}) => void```  This will be called once for each request sent.
 - **```RETURNS```**: An array of Promises.  Use a construct like [```bluebird.all()```](http://bluebirdjs.com/docs/api/promise.all.html) to wait for all to finish if you wish.
 
-
 ### Typescript Typings
 If you use Visual Studio or VSCode the IntelliSense will automatically load when you: ```import phantomjscloud = require("phantomjscloud");``` 
 
 You do not need to load anything from the DefinitelyTyped nor Typings projects. 
+ 
+## Examples
+Here are some basic examples.  Look at the [phantomjscloud-node-examples project on github](https://github.com/Novaleaf/phantomjscloud-node-examples) for more.
+
+#### Capture Amazon.com as a PDF
+**```Basic Javascript```**
+
+	var pageRequest = { url: "https://amazon.com", renderType: "pdf" };
+	console.log("about to request page from PhantomJs Cloud.  request =", JSON.stringify(pageRequest, null, "\t"));
+	
+	browser.requestSingle(pageRequest, (err, userResponse) => {
+		if (userResponse.statusCode != 200) {
+			throw new Error("invalid status code" + userResponse.statusCode);
+		}
+	
+		fs.writeFile(userResponse.content.name, userResponse.content.data,
+			{
+				encoding: userResponse.content.encoding,
+			}, (err) => {
+				console.log("captured page written to " + userResponse.content.name);
+			});
+	});
+
+**```Typescript with Promises```**
+	
+	//the page you wish to render
+	let pageRequest: phantomJsCloud.ioDatatypes.IPageRequest = { url: "https://amazon.com", renderType: "pdf" };
+	
+	console.log("about to request page from PhantomJs Cloud.  request =", JSON.stringify(pageRequest, null, "\t"));
+	browser.requestSingle(pageRequest)
+		.then((userResponse) => {
+	
+			if (userResponse.statusCode != 200) {			
+				throw new Error("invalid status code" + userResponse.statusCode);
+			}
+			
+			fs.writeFile(userResponse.content.name, userResponse.content.data,
+				{
+					encoding: userResponse.content.encoding,
+				}, (err) => {
+					console.log("captured page written to " + userResponse.content.name);
+				});
+		});
+
+#### All Parameters
+Shows using all parameters in a request, capturing the page as a ```.jpg``` image.  Most the parameters used are the defaults, but you can see a list of the most up-to-date [default values here](https://phantomjscloud.com/examples/helpers/pageRequestDefaults).
+
+**```Typescript with Promises```**
+	
+	//the page you wish to render
+	let userRequest: phantomJsCloud.ioDatatypes.IUserRequest = {
+			pages:[
+				{
+					"url": "http://example.com",
+					"content": null,
+					"urlSettings": {
+						"operation": "GET",
+						"encoding": "utf8",
+						"headers": {},
+						"data": null
+					},
+					"renderType": "jpg",
+					"outputAsJson": false,
+					"requestSettings": {
+						"ignoreImages": false,
+						"disableJavascript": false,
+						"userAgent": "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.34 (KHTML, like Gecko) Safari/534.34 PhantomJS/2.0.0 (PhantomJsCloud.com/2.0.1)",
+						"authentication": {
+							"userName": "guest",
+							"password": "guest"
+						},
+						"xssAuditingEnabled": false,
+						"webSecurityEnabled": false,
+						"resourceWait": 15000,
+						"resourceTimeout": 35000,
+						"maxWait": 35000,
+						"waitInterval": 1000,
+						"stopOnError": false,
+						"resourceModifier": [],
+						"customHeaders": {},
+						"clearCache": false,
+						"clearCookies": false,
+						"cookies": [],
+						"deleteCookies": []
+					},
+					"suppressJson": [
+						"events.value.resourceRequest.headers",
+						"events.value.resourceResponse.headers",
+						"frameData.content",
+						"frameData.childFrames"
+					],
+					"renderSettings": {
+						"quality": 70,
+						"pdfOptions": {
+							"border": null,
+							"footer": {
+								"firstPage": null,
+								"height": "1cm",
+								"lastPage": null,
+								"onePage": null,
+								"repeating": "%pageNum%/%numPages%"
+							},
+							"format": "letter",
+							"header": null,
+							"height": null,
+							"orientation": "portrait",
+							"width": null
+						},
+						"clipRectangle": null,
+						"renderIFrame": null,
+						"viewport": {
+							"height": 1280,
+							"width": 1280
+						},
+						"zoomFactor": 1,
+						"passThroughHeaders": false
+					},
+					"scripts": {
+						"domReady": [],
+						"loadFinished": []
+					}
+				}
+			],
+			proxy:false
+		};
+	
+	console.log("about to request page from PhantomJs Cloud.  request =", JSON.stringify(userRequest, null, "\t"));
+	browser.requestSingle(userRequest)
+		.then((userResponse) => {
+	
+			if (userResponse.statusCode != 200) {			
+				throw new Error("invalid status code" + userResponse.statusCode);
+			}
+			
+			fs.writeFile(userResponse.content.name, userResponse.content.data,
+				{
+					encoding: userResponse.content.encoding,
+				}, (err) => {
+					console.log("captured page written to " + userResponse.content.name);
+				});
+		});
  
 
 ## Technical details
