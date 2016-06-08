@@ -112,11 +112,14 @@ export class BrowserApi {
 
 				return Promise.resolve(httpResponse.data);
 
-			}, (errResponse: Axios.AxiosXHR<ioDatatypes.IUserResponse>) => {
-				utils.debugLog("_task_worker errResponse", errResponse);
-				let statusCode = errResponse.status;
-				let ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode.toString(), statusCode, errResponse.data, errResponse.headers as any);
-				return Promise.reject(ex);
+			}, (err) => {
+
+				let errResponse: Axios.AxiosXHR<ioDatatypes.IUserResponse> = err.innerData
+				return Promise.reject(err);
+				//utils.debugLog("_task_worker errResponse", errResponse);
+				//let statusCode = errResponse.status;
+				//let ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode, statusCode, errResponse.data, errResponse.headers as any);
+				//return Promise.reject(ex);
 			}).finally(() => {
 				utils.debugLog("_task_worker FINISH");
 			});

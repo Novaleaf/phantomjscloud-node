@@ -107,7 +107,7 @@ export class AutoscaleConsumer<TInput, TOutput>{
 
 		if (this._pendingTasks.length === 0) {
 			//no work to do, dispose or wait
-			//also instantly dispose of the worker if there's the minimum.
+			//also instantly dispose of the worker if there's the minimum number of workers or less (because we will instantly spawn them up if needed).
 			if (idleMs > this.options.workerMaxIdleMs || this._workerCount <= this.options.workerMin) {
 				//already idle too long, dispose
 				this._workerLoop_disposeHelper();
@@ -157,18 +157,21 @@ export class EzEndpointFunction<TSubmitPayload, TRecievePayload>{
 		public origin?: string,
 		public path?: string,
 		/** default is to retry for up to 10 seconds, (no retries after 10 seconds) */
-		public retryOptions: refs._BluebirdRetryInternals.IOptions = { timeout: 60000, interval: 100, backoff: 2, max_interval: 5000 },
+		public retryOptions: refs._BluebirdRetryInternals.IOptions = { timeout: 10000, interval: 100, backoff: 2, max_interval: 5000 },
 		/** default is to timeout (err 545) after 60 seconds*/
 		public requestOptions: Axios.AxiosXHRConfigBase<TRecievePayload> = { timeout: 60000 },
-		/** allows aborting retries (if any).  return null to continue retry normally,  return any non-null to abort retries and return the result you are returning.
+		/** allows aborting retries (if any).  return a resolved promise to continue retry normally,  return any rejected promise to abort retries and return the result you are returning.
 		NOTE:   error's of statusCode 545 are request timeouts
 		DEFAULT:  by default we will retry error 500 and above. */
-		public preRetryIntercept: (err: Axios.AxiosXHR<TRecievePayload>) => Promise<TRecievePayload> = (err) => {
+		public preRetryIntercept: (err: Axios.AxiosXHR<TRecievePayload>) => Promise<void> = (err) => {
 			if (err.status <= 499) {
-				//console.assert(false, "err");					
-				return Promise.reject(err);
+				//console.assert(false, "err");		
+				let error = new Error(`EzEndpointFunction error.  status=${err.status} statusText=${err.statusText}.  see .innerData for details`);
+				(error as any)["innerData"] = err;
+				return Promise.reject(error);
 			} else {
-				return null;
+				//5xx error, so retry
+				return Promise.resolve();
 			}
 		}
 	) {
@@ -204,7 +207,11 @@ export class EzEndpointFunction<TSubmitPayload, TRecievePayload>{
 						debugLog("EzEndpointFunction .post() got valid response");
 						return Promise.resolve(result);
 					}, (err: Axios.AxiosXHR<TRecievePayload>) => {
-						debugLog("EzEndpointFunction .post() got err");
+						if (err.status == null) {
+							debugLog("EzEndpointFunction .post() error: unable to contact the server at " + customOrigin);
+						} else {
+							debugLog("EzEndpointFunction .post() got err", err.status, err.statusText);
+						}
 						//log.info(err);
 						if (err.status === 0 && err.statusText === "" && err.data === "" as any) {
 							//log.debug("EzEndpointFunction axios.post timeout.", { endpoint });
@@ -212,16 +219,31 @@ export class EzEndpointFunction<TSubmitPayload, TRecievePayload>{
 							err.statusText = "A Timeout Occurred";
 							err.data = "Axios->EzEndpointFunction timeout." as any;
 						}
-						if (this.preRetryIntercept != null) {
-							let interceptResult = this.preRetryIntercept(err);
-							if (interceptResult != null) {
-								let stopError = new PromiseRetry.StopError("preRetryIntercept abort");
-								(stopError as any)["interceptResult"] = interceptResult;
-								return Promise.reject(stopError);
-							}
+						if (this.preRetryIntercept != null) { //see if we should retry this or not
+							return this.preRetryIntercept(err)
+								.then(() => {
+									//success result signals that we should retry
+									lastErrorResult = err;
+									return Promise.reject(err);
+
+								}, (interceptResult) => {
+									//pre-retry reject, so we need to stop retrying.  we do this by wrapping our actual rejection with a "StopError"
+									let stopError = new PromiseRetry.StopError("preRetryIntercept abort");
+									(stopError as any)["interceptResult"] = interceptResult;
+									return Promise.reject(stopError);
+								})
+
+							//let interceptResult = this.preRetryIntercept(err);
+							//if (interceptResult != null) {
+							//	let stopError = new PromiseRetry.StopError("preRetryIntercept abort");
+							//	(stopError as any)["interceptResult"] = interceptResult;
+							//	return Promise.reject(stopError);
+							//}
+						} else {
+							//no pre-retry intercept, so retry everything
+							lastErrorResult = err;
+							return Promise.reject(err);
 						}
-						lastErrorResult = err;
-						return Promise.reject(err);
 					});
 
 			} catch (errThrown) {
@@ -233,7 +255,8 @@ export class EzEndpointFunction<TSubmitPayload, TRecievePayload>{
 			.catch((err: any) => {
 				debugLog("EzEndpointFunction .post()  retry catch");
 				if (err.interceptResult != null) {
-					return err.interceptResult;
+					//we aborted retry, so return the actual error that stoped retrying, not our "stopError" wrapper
+					return Promise.reject(err.interceptResult);
 				}
 
 				//let payloadStr = submitPayload == null ? "" : serialization.JSONX.inspectStringify(submitPayload);

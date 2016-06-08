@@ -47,19 +47,19 @@ export declare class EzEndpointFunction<TSubmitPayload, TRecievePayload> {
     retryOptions: refs._BluebirdRetryInternals.IOptions;
     /** default is to timeout (err 545) after 60 seconds*/
     requestOptions: Axios.AxiosXHRConfigBase<TRecievePayload>;
-    /** allows aborting retries (if any).  return null to continue retry normally,  return any non-null to abort retries and return the result you are returning.
+    /** allows aborting retries (if any).  return a resolved promise to continue retry normally,  return any rejected promise to abort retries and return the result you are returning.
     NOTE:   error's of statusCode 545 are request timeouts
     DEFAULT:  by default we will retry error 500 and above. */
-    preRetryIntercept: (err: Axios.AxiosXHR<TRecievePayload>) => Promise<TRecievePayload>;
+    preRetryIntercept: (err: Axios.AxiosXHR<TRecievePayload>) => Promise<void>;
     constructor(origin?: string, path?: string, 
         /** default is to retry for up to 10 seconds, (no retries after 10 seconds) */
         retryOptions?: refs._BluebirdRetryInternals.IOptions, 
         /** default is to timeout (err 545) after 60 seconds*/
         requestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>, 
-        /** allows aborting retries (if any).  return null to continue retry normally,  return any non-null to abort retries and return the result you are returning.
+        /** allows aborting retries (if any).  return a resolved promise to continue retry normally,  return any rejected promise to abort retries and return the result you are returning.
         NOTE:   error's of statusCode 545 are request timeouts
         DEFAULT:  by default we will retry error 500 and above. */
-        preRetryIntercept?: (err: Axios.AxiosXHR<TRecievePayload>) => Promise<TRecievePayload>);
+        preRetryIntercept?: (err: Axios.AxiosXHR<TRecievePayload>) => Promise<void>);
     toJson(): {
         origin: string;
         path: string;
