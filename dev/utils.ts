@@ -12,10 +12,10 @@ export function debugLog(...args: any[]): void {
 	if (isDebug !== true) {
 		return;
 	}
-	console.log("\n");
+	//console.log("\n");
 	console.log("\n=====================================");
 	console.log.apply(console, args);
-	console.log("\n");
+	//console.log("\n");
 }
 
 
@@ -66,7 +66,7 @@ export class AutoscaleConsumer<TInput, TOutput>{
 		let toReturn = new Promise<TOutput>((resolve, reject) => {
 			this._pendingTasks.push({ input, resolve, reject });
 		});
-		this._tryStartProcessing();
+		this._trySpawnWorker();
 		return toReturn;
 	}
 
@@ -75,13 +75,13 @@ export class AutoscaleConsumer<TInput, TOutput>{
 	private _workerLastAddTime: Date = new Date(0);
 
 
-	private _tryStartProcessing() {
-		debugLog("AutoscaleConsumer._tryStartProcessing called");
+	private _trySpawnWorker() {
+		//debugLog("AutoscaleConsumer._tryStartProcessing called");
 		if (this._workerCount >= this.options.workerMax || this._pendingTasks.length === 0) {
 			return;
 		}
 
-		let nextAddTime = this._workerLastAddTime.getDate() + this.options.workersLinearGrowthMs;
+		let nextAddTime = this._workerLastAddTime.getTime() + this.options.workersLinearGrowthMs;
 		let now = Date.now();
 
 		let timeToAddWorker = false;
@@ -100,8 +100,25 @@ export class AutoscaleConsumer<TInput, TOutput>{
 			this._workerLastAddTime = new Date();
 			setTimeout(() => { this._workerLoop() });
 		}
-	}
 
+		if (this.__autoTrySpawnHandle == null) {
+			//set a periodic auto-try-spawn worker to kick off
+			this.__autoTrySpawnHandle = setInterval(() => {
+				this._trySpawnWorker();
+				if (this._pendingTasks.length == 0) {
+					//stop this period attempt because no work to do.
+					clearInterval(this.__autoTrySpawnHandle);
+					this.__autoTrySpawnHandle = null;
+				}
+			}, 100);
+		}
+	}
+	private __autoTrySpawnHandle: NodeJS.Timer;
+
+	/**
+	 *  recursively loops itself
+	 * @param idleMs
+	 */
 	private _workerLoop(idleMs: number = 0) {
 
 
@@ -120,26 +137,27 @@ export class AutoscaleConsumer<TInput, TOutput>{
 		let work = this._pendingTasks.shift();
 
 		Promise.try(() => {
+			debugLog("AUTOSCALECONSUMER._workerLoop() starting request processing (workProcessor) concurrent=" + this._workerCount);
 			return this._workProcessor(work.input);
 		}).then((output) => {
+			debugLog("AUTOSCALECONSUMER._workerLoop() finished workProcessor() SUCCESS. concurrent=" + this._workerCount);
 			work.resolve(output);
 		}, (error) => {
+			debugLog("AUTOSCALECONSUMER._workerLoop() finished workProcessor() ERROR. concurrent=" + this._workerCount);
 			work.reject(error);
+		}).finally(() => {
+
+			//fire another loop next tick
+			setTimeout(() => { this._workerLoop(); });
+
+			//since we had work to do, there might be more work to do/scale up workers for. fire a "try start processing"
+			this._trySpawnWorker();
 		});
-
-
-
-
-		//fire another loop next tick
-		setTimeout(() => { this._workerLoop(); });
-
-		//since we had work to do, there might be more work to do/scale up workers for. fire a "try start processing"
-		this._tryStartProcessing();
-
-		return;
 	}
 
 	private _workerLoop_disposeHelper() {
+
+		debugLog("AUTOSCALECONSUMER._workerLoop() already idle too long, dispose.   concurrent=" + this._workerCount);
 		this._workerCount--;
 	}
 
@@ -183,13 +201,13 @@ export class EzEndpointFunction<TSubmitPayload, TRecievePayload>{
 	}
 
 	public post(submitPayload?: TSubmitPayload, /**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>, customOrigin: string = this.origin, customPath: string = this.path): Promise<Axios.AxiosXHR<TRecievePayload>> {
-		debugLog("EzEndpointFunction .post() called");
+		//debugLog("EzEndpointFunction .post() called");
 		let lastErrorResult: any = null;
 		return PromiseRetry<Axios.AxiosXHR<TRecievePayload>>(() => {
 
 			try {
 
-				debugLog("EzEndpointFunction .post() in PromiseRetry block");
+				//debugLog("EzEndpointFunction .post() in PromiseRetry block");
 				let endpoint = customOrigin + customPath;
 				//log.debug("EzEndpointFunction axios.post", { endpoint });
 

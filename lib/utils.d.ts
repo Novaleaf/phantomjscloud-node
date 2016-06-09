@@ -33,7 +33,12 @@ export declare class AutoscaleConsumer<TInput, TOutput> {
     process(input: TInput): Promise<TOutput>;
     private _workerCount;
     private _workerLastAddTime;
-    private _tryStartProcessing();
+    private _trySpawnWorker();
+    private __autoTrySpawnHandle;
+    /**
+     *  recursively loops itself
+     * @param idleMs
+     */
     private _workerLoop(idleMs?);
     private _workerLoop_disposeHelper();
 }

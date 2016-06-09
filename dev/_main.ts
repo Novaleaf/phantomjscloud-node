@@ -108,7 +108,7 @@ export class BrowserApi {
 
 		return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, finalPath)
 			.then((httpResponse) => {
-				utils.debugLog("_task_worker httpResponse", httpResponse.data);
+				//utils.debugLog("_task_worker httpResponse", httpResponse.data);
 
 				return Promise.resolve(httpResponse.data);
 
