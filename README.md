@@ -21,6 +21,7 @@ This library provides a simple and high quality mechanism for interacting with [
 1. **Install**:  ```npm install phantomjscloud --save```
 2. **Use**:
 
+```javascript
 		var phantomJsCloud = require("phantomjscloud");
 		var browser = new phantomJsCloud.BrowserApi();
 		
@@ -31,9 +32,11 @@ This library provides a simple and high quality mechanism for interacting with [
 			}
 			console.log(JSON.stringify(userResponse.content));
 		});
+```
 
-	**or a slightly more complex example using [Typescript](https://www.typescriptlang.org/)**:
+**or a slightly more complex example using [Typescript](https://www.typescriptlang.org/)**:
 
+```javascript
 		//typings will automatically be loaded
 		import phantomJsCloud = require("phantomjscloud");
 		
@@ -55,7 +58,7 @@ This library provides a simple and high quality mechanism for interacting with [
 					statusCode: userResponse.statusCode
 				}, null, "\t")); //pretty-print
 			});
-
+```
 
 ## Options
 
@@ -95,6 +98,8 @@ Here are some basic examples.  Look at the [phantomjscloud-node-examples project
 #### Capture Amazon.com as a PDF
 **```Basic Javascript```**
 
+
+```javascript
 	var pageRequest = { url: "https://amazon.com", renderType: "pdf" };
 	console.log("about to request page from PhantomJs Cloud.  request =", JSON.stringify(pageRequest, null, "\t"));
 	
@@ -110,9 +115,12 @@ Here are some basic examples.  Look at the [phantomjscloud-node-examples project
 				console.log("captured page written to " + userResponse.content.name);
 			});
 	});
+```
 
 **```Typescript with Promises```**
-	
+
+
+```javascript	
 	//the page you wish to render
 	let pageRequest: phantomJsCloud.ioDatatypes.IPageRequest = { url: "https://amazon.com", renderType: "pdf" };
 	
@@ -131,12 +139,15 @@ Here are some basic examples.  Look at the [phantomjscloud-node-examples project
 					console.log("captured page written to " + userResponse.content.name);
 				});
 		});
+```
 
 #### All Parameters
 Shows using all parameters in a request, capturing the page as a ```.jpg``` image.  Most the parameters used are the defaults, but you can see a list of the most up-to-date [default values here](https://phantomjscloud.com/examples/helpers/pageRequestDefaults).
 
 **```Typescript with Promises```**
-	
+
+
+```javascript	
 	//the page you wish to render
 	let userRequest: phantomJsCloud.ioDatatypes.IUserRequest = {
 			pages:[
@@ -229,6 +240,7 @@ Shows using all parameters in a request, capturing the page as a ```.jpg``` imag
 					console.log("captured page written to " + userResponse.content.name);
 				});
 		});
+```
  
 
 ## Technical details
