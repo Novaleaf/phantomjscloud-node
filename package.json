@@ -22,20 +22,15 @@
     "name": "Jason Swearingen",
     "email": "jasons@novaleaf.com"
   },
-  "main": "./lib/_main.js",
-  "typings": "./lib/_main.d.ts",
+  "main": "./dist/_index.js",
+  "types": "./dist/_index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/Novaleaf/phantomjscloud-node"
   },
-  "scripts": {
-    "build": "rm -rf lib && tsc"
-  },
+  "scripts": {},
   "dependencies": {
-    "axios": "^0.11.0",
-    "bluebird": "^3.3.5",
-    "bluebird-retry": "^0.6.1",
-    "lodash": "^4.11.1"
+    "xlib": "^4.0.17"
   },
   "devDependencies": {}
 }

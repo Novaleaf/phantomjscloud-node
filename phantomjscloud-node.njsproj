@@ -41,18 +41,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="tsconfig.json" />
-    <TypeScriptCompile Include="dev\io-data-types.ts" />
-    <TypeScriptCompile Include="dev\utils.ts">
+    <TypeScriptCompile Include="src\io-data-types.ts" />
+    <TypeScriptCompile Include="src\utils.ts">
       <SubType>Code</SubType>
       <TestFramework>Mocha</TestFramework>
     </TypeScriptCompile>
     <Content Include="package.json" />
     <Content Include="README.md" />
-    <TypeScriptCompile Include="dev\_main.ts" />
-    <TypeScriptCompile Include="dev\refs.ts" />
+    <TypeScriptCompile Include="src\_index.ts" />
+    <TypeScriptCompile Include="src\refs.ts" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="dev\" />
+    <Folder Include="src\" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />

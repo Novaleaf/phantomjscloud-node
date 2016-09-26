@@ -5,9 +5,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var refs = require("./refs");
-var Promise = refs.Promise;
+var xlib = refs.xlib;
+var Promise = xlib.promise.bluebird;
+var _ = xlib.lodash;
+var log = new xlib.logging.Logger(__filename);
+//import Promise = refs.Promise;
+//import PromiseRetry = refs.PromiseRetry;
 exports.ioDatatypes = require("./io-data-types");
-var _ = refs.lodash;
 /**
  *  helper utils used by the phantomjscloud api.
  */
@@ -56,7 +60,7 @@ var BrowserApi = (function () {
     function BrowserApi(keyOrOptions) {
         if (keyOrOptions === void 0) { keyOrOptions = {}; }
         this._endpointPath = "/api/browser/v2/";
-        this._browserV2RequestezEndpoint = new utils.EzEndpointFunction();
+        this._browserV2RequestezEndpoint = new xlib.net.EzEndpointFunction();
         if (typeof keyOrOptions === "string") {
             this.options = { apiKey: keyOrOptions };
         }
@@ -74,7 +78,7 @@ var BrowserApi = (function () {
      * @param task
      */
     BrowserApi.prototype._task_worker = function (task) {
-        utils.debugLog("_task_worker START");
+        log.debug("_task_worker START");
         _.defaults(task.customOptions, this.options);
         /**
          *  path including apiKey
@@ -82,26 +86,26 @@ var BrowserApi = (function () {
         var finalPath = this._endpointPath + task.customOptions.apiKey + "/";
         return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, finalPath)
             .then(function (httpResponse) {
-            //utils.debugLog("_task_worker httpResponse", httpResponse.data);
+            //log.debug("_task_worker httpResponse", httpResponse.data);
             return Promise.resolve(httpResponse.data);
         }, function (err) {
             var errResponse = err.innerData;
             return Promise.reject(err);
-            //utils.debugLog("_task_worker errResponse", errResponse);
+            //log.debug("_task_worker errResponse", errResponse);
             //let statusCode = errResponse.status;
             //let ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode, statusCode, errResponse.data, errResponse.headers as any);
             //return Promise.reject(ex);
         }).finally(function () {
-            utils.debugLog("_task_worker FINISH");
+            log.debug("_task_worker FINISH");
         });
     };
     BrowserApi.prototype.requestSingle = function (request, customOptions, callback) {
-        utils.debugLog("requestSingle");
+        log.debug("requestSingle");
         if (callback == null && customOptions != null) {
             //handle function overload
             if (typeof customOptions == "function") {
                 callback = customOptions;
-                customOptions = null;
+                customOptions = undefined;
             }
         }
         if (customOptions == null) {
@@ -124,12 +128,12 @@ var BrowserApi = (function () {
         return this._autoscaler.process(task)
             .then(function (result) {
             if (callback != null) {
-                callback(null, result);
+                callback(undefined, result);
             }
             return Promise.resolve(result);
         }, function (err) {
             if (callback != null) {
-                callback(err, null);
+                callback(err, undefined);
             }
             return Promise.reject(err);
         });
@@ -140,13 +144,14 @@ var BrowserApi = (function () {
             //handle function overload
             if (typeof customOptions == "function") {
                 callback = customOptions;
-                customOptions = null;
+                customOptions = undefined;
             }
         }
         var responsePromises = [];
         if (callback != null) {
+            var _cb_1 = callback;
             _.forEach(requests, function (request) {
-                responsePromises.push(_this.requestSingle(request, customOptions, function (err, result) { callback(err, { request: request, result: result }); }));
+                responsePromises.push(_this.requestSingle(request, customOptions, function (err, result) { _cb_1(err, { request: request, result: result }); }));
             });
         }
         else {
@@ -173,4 +178,4 @@ var BrowserApi = (function () {
     return BrowserApi;
 }());
 exports.BrowserApi = BrowserApi;
-//# sourceMappingURL=_main.js.map
+//# sourceMappingURL=_index.js.map

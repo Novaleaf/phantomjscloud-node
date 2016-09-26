@@ -1,3 +1,4 @@
+/// <reference types="node" />
 export import ioDatatypes = require("./io-data-types");
 export declare function setDebug(isDebug: boolean): void;
 /**
@@ -53,7 +54,7 @@ export declare class BrowserApi {
      * @param callback
      */
     requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
-    requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
+    requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: (err?: Error, result?: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
     /**
      * make more than 1 browser request (PhantomJs call).  These are executed in parallel and is already optimized for PhantomJs Cloud auto-scaling, (The more your requests, the faster they will process.)
      * @param requests
@@ -63,8 +64,8 @@ export declare class BrowserApi {
         request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest);
         result: ioDatatypes.IUserResponse;
     }) => void): PromiseLike<ioDatatypes.IUserResponse>[];
-    requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions?: IBrowserApiOptions, callback?: (err: Error, item: {
+    requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions?: IBrowserApiOptions, callback?: (err?: Error, item?: {
         request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest);
-        result: ioDatatypes.IUserResponse;
+        result?: ioDatatypes.IUserResponse;
     }) => void): PromiseLike<ioDatatypes.IUserResponse>[];
 }

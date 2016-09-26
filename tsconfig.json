@@ -2,7 +2,6 @@
   "compileOnSave": true,
   "compilerOptions": {
     "module": "commonjs",
-    "noImplicitAny": true,
     "removeComments": false,
     "preserveConstEnums": true,
     "sourceMap": true,
@@ -17,19 +16,25 @@
     "target": "es5",
     "watch": false,
     "moduleResolution": "node",
-    "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,
 
-    "outDir": "./lib",
-    "rootDir": "./dev"
+    "outDir": "./dist",
+    "rootDir": "./src",
 
+    "noImplicitReturns": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strictNullChecks": true
+    
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules",
-    "lib",
-    "typings/browser.d.ts",
-    "typings/browser",
-    "obj",
-    "bin"
+    "dist",
+    "src/graveyard"
   ]
 }

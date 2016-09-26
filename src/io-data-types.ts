@@ -260,9 +260,9 @@ export interface IPageRequest {
 }
 
 export function pageRequestDefaultsGet(): IPageRequest {
-    let pageRequestDefaults: IPageRequest = {
-        url: null,
-        content: null,
+    let pageRequestDefaults: IPageRequest = <any> {
+        url: null as any,
+        content: null as any,
         urlSettings: {
             operation: "GET",
             encoding: "utf8",
