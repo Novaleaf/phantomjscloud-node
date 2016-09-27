@@ -500,9 +500,9 @@ export interface IUserResponse {
     //	elapsedMs: number;
     //};
     /** metadata about the transaction */
-    meta?: {
+    meta: {
         /** information about the PhantomJsCloud.com system processing this transaction*/
-        backend?: {
+        backend: {
             os: string;
             /** identifier of the system, for troubleshooting purposes */
             id: string;  //set by node
@@ -521,7 +521,7 @@ export interface IUserResponse {
 		NOTE: the creditCost, prepaidCreditsRemaining, and dailySubscriptionCreditsRemaining are also returning in the HTTP Response Headers via the keys
 		```pjsc-credit-cost```, ```pjsc-daily-subscription-credits-remaining```, and ```pjsc-prepaid-credits-remaining``` 
 		*/
-        billing?: {
+        billing: {
             elapsedMs: number;
             bytes: number;
             /** the total cost of this response */

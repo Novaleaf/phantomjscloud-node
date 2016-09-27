@@ -30,7 +30,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "xlib": "^4.0.17"
+    "xlib": "^4.0.19"
   },
   "devDependencies": {}
 }
