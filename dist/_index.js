@@ -4,14 +4,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-//specify xlib config options, without requiring environmental config
-global._xlibConfigDefaults = {
-    logLevel: "ERROR",
-    envLevel: "PROD",
-    isTest: "FALSE",
-    isDev: "FALSE",
-    sourceMapSupport: true,
-};
 var refs = require("./refs");
 var xlib = refs.xlib;
 var Promise = xlib.promise.bluebird;
