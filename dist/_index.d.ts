@@ -1,4 +1,3 @@
-/// <reference types="node" />
 export import ioDatatypes = require("./io-data-types");
 export declare function setDebug(isDebug: boolean): void;
 /**

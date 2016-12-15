@@ -1,4 +1,12 @@
 ﻿
+//specify xlib config options, without requiring environmental config
+(global as any)._xlibConfigDefaults = {
+	logLevel: "ERROR",
+	envLevel: "PROD",
+	isTest: "FALSE",
+	isDev: "FALSE",
+	sourceMapSupport: true,
+} as typeof _xlibConfigDefaults;
 
 import refs = require("./refs");
 import xlib = refs.xlib;
@@ -76,8 +84,9 @@ interface IBrowserApiTask {
  */
 export class BrowserApi {
 
-    private _endpointPath = "/api/browser/v2/";
-    private _browserV2RequestezEndpoint = new xlib.net.EzEndpointFunction<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>();
+	private _endpointPath = "/api/browser/v2/";
+	
+	private _browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({});
 
     public options: IBrowserApiOptions;
 
@@ -93,7 +102,8 @@ export class BrowserApi {
 
         if (this.options.apiKey === defaultBrowserApiOptions.apiKey && this.options.suppressDemoKeyWarning !== true) {
             console.warn("\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n");
-        }
+		}
+		//this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({origin:this.options.endpointOrigin, path});
 
         this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker.bind(this));
     }
@@ -114,7 +124,11 @@ export class BrowserApi {
 		 */
         let finalPath = this._endpointPath + task.customOptions.apiKey + "/";
 
-        return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, finalPath)
+
+		//this._browserV2RequestezEndpoint.post(task.userRequest, "hi", "bye", 123);
+
+		return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, undefined, {origin:task.customOptions.endpointOrigin, path: finalPath})
+        //return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, finalPath)
             .then((httpResponse) => {
                 //log.debug("_task_worker httpResponse", httpResponse.data);
 
@@ -233,4 +247,31 @@ export class BrowserApi {
 }
 
 
+namespace _test {
 
+	describe(__filename, () => {
+
+		describe("basic browserApi functionality", () => {
+
+			it("plainText example.com", () => {
+
+				let browserApi = new BrowserApi();
+				let pageRequest: ioDatatypes.IPageRequest = {
+					url: "https://www.example.com",
+					renderType:"plainText",
+				};
+				return browserApi.requestSingle(pageRequest)
+					.then((pjscResponse) => {
+						if (pjscResponse.content.data.indexOf("example") >= 0) {
+							return Promise.resolve();
+						}
+						return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse }));
+					})
+
+			});
+
+		});
+
+	});
+
+}

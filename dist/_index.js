@@ -4,6 +4,14 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+//specify xlib config options, without requiring environmental config
+global._xlibConfigDefaults = {
+    logLevel: "ERROR",
+    envLevel: "PROD",
+    isTest: "FALSE",
+    isDev: "FALSE",
+    sourceMapSupport: true,
+};
 var refs = require("./refs");
 var xlib = refs.xlib;
 var Promise = xlib.promise.bluebird;
@@ -26,7 +34,7 @@ exports.setDebug = setDebug;
 var PhantomJsCloudException = (function (_super) {
     __extends(PhantomJsCloudException, _super);
     function PhantomJsCloudException() {
-        _super.apply(this, arguments);
+        return _super.apply(this, arguments) || this;
     }
     return PhantomJsCloudException;
 }(Error));
@@ -37,10 +45,11 @@ exports.PhantomJsCloudException = PhantomJsCloudException;
 var PhantomJsCloudBrowserApiException = (function (_super) {
     __extends(PhantomJsCloudBrowserApiException, _super);
     function PhantomJsCloudBrowserApiException(message, statusCode, payload, headers) {
-        _super.call(this, message);
-        this.statusCode = statusCode;
-        this.payload = payload;
-        this.headers = headers;
+        var _this = _super.call(this, message) || this;
+        _this.statusCode = statusCode;
+        _this.payload = payload;
+        _this.headers = headers;
+        return _this;
     }
     return PhantomJsCloudBrowserApiException;
 }(PhantomJsCloudException));
@@ -60,7 +69,7 @@ var BrowserApi = (function () {
     function BrowserApi(keyOrOptions) {
         if (keyOrOptions === void 0) { keyOrOptions = {}; }
         this._endpointPath = "/api/browser/v2/";
-        this._browserV2RequestezEndpoint = new xlib.net.EzEndpointFunction();
+        this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint({});
         if (typeof keyOrOptions === "string") {
             this.options = { apiKey: keyOrOptions };
         }
@@ -71,6 +80,7 @@ var BrowserApi = (function () {
         if (this.options.apiKey === exports.defaultBrowserApiOptions.apiKey && this.options.suppressDemoKeyWarning !== true) {
             console.warn("\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n");
         }
+        //this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({origin:this.options.endpointOrigin, path});
         this._autoscaler = new utils.AutoscaleConsumer(this._task_worker.bind(this));
     }
     /**
@@ -84,7 +94,8 @@ var BrowserApi = (function () {
          *  path including apiKey
          */
         var finalPath = this._endpointPath + task.customOptions.apiKey + "/";
-        return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, finalPath)
+        //this._browserV2RequestezEndpoint.post(task.userRequest, "hi", "bye", 123);
+        return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, undefined, { origin: task.customOptions.endpointOrigin, path: finalPath })
             .then(function (httpResponse) {
             //log.debug("_task_worker httpResponse", httpResponse.data);
             return Promise.resolve(httpResponse.data);
@@ -178,4 +189,25 @@ var BrowserApi = (function () {
     return BrowserApi;
 }());
 exports.BrowserApi = BrowserApi;
+var _test;
+(function (_test) {
+    describe(__filename, function () {
+        describe("basic browserApi functionality", function () {
+            it("plainText example.com", function () {
+                var browserApi = new BrowserApi();
+                var pageRequest = {
+                    url: "https://www.example.com",
+                    renderType: "plainText",
+                };
+                return browserApi.requestSingle(pageRequest)
+                    .then(function (pjscResponse) {
+                    if (pjscResponse.content.data.indexOf("example") >= 0) {
+                        return Promise.resolve();
+                    }
+                    return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse: pjscResponse }));
+                });
+            });
+        });
+    });
+})(_test || (_test = {}));
 //# sourceMappingURL=_index.js.map

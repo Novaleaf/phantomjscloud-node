@@ -176,7 +176,7 @@ export interface IPageRequest {
     "pdf": renders page as a pdf,
     "script": returns the contents of ```window['_pjscMeta'].scriptOutput```.   see the [scripts](#_io_datatypes_.pagerequest.scripts)  parameter for more details,
     "plainText": return the text without html tags (page plain text),*/
-    renderType?: string;
+    renderType?: "html" | "jpeg" | "jpg" | "png" | "pdf" | "script" | "plainText";
     /** TRUE to return the page conents and metadata as a JSON object.  see [IUserResponse](#_io_datatypes_.iuserresponse)
      * if FALSE, we return the rendered content in it's native form.
      */
