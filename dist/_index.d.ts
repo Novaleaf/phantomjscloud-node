@@ -27,6 +27,24 @@ export interface IBrowserApiOptions {
      *  set to true to not show a warning for using demo keys.
      */
     suppressDemoKeyWarning?: boolean;
+    /**override HTTP request options, default to undefined (use defaults) */
+    requestOptions?: {
+        /** default timeout for the network request is 65000 (65 seconds) */
+        timeout?: number;
+    };
+    /**override network failure retry options, default to undefined (use defaults) */
+    retryOptions?: {
+        /** assumes the network request timed out if it takes longer than this.  default is 66000 (66 seconds) */
+        timeout?: number;
+        /** maximum number of attempts to try the operation.   default is 3*/
+        max_tries?: number;
+        /**  initial wait time between retry attempts in milliseconds(default 1000)*/
+        interval?: number;
+        /**  if specified, increase interval by this factor between attempts*/
+        backoff?: number;
+        /** if specified, maximum amount that interval can increase to*/
+        max_interval?: number;
+    };
 }
 /**
  *  the defaults used if options are not passed to a new BrowserApi object.

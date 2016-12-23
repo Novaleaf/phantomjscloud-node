@@ -49,7 +49,29 @@ export interface IBrowserApiOptions {
 	/**
 	 *  set to true to not show a warning for using demo keys.
 	 */
-    suppressDemoKeyWarning?: boolean;
+	suppressDemoKeyWarning?: boolean;
+
+	/**override HTTP request options, default to undefined (use defaults) */
+	requestOptions?: {
+		/** default timeout for the network request is 65000 (65 seconds) */
+		timeout?: number;
+	},
+	/**override network failure retry options, default to undefined (use defaults) */
+	retryOptions?: {
+		/** assumes the network request timed out if it takes longer than this.  default is 66000 (66 seconds) */
+		timeout?: number;
+
+		/** maximum number of attempts to try the operation.   default is 3*/
+		max_tries?: number;
+		/**  initial wait time between retry attempts in milliseconds(default 1000)*/
+		interval?: number;
+
+		/**  if specified, increase interval by this factor between attempts*/
+		backoff?: number;
+		/** if specified, maximum amount that interval can increase to*/
+		max_interval?: number;
+	},
+	
 }
 /**
  *  the defaults used if options are not passed to a new BrowserApi object.
@@ -77,7 +99,7 @@ export class BrowserApi {
 
     private _endpointPath = "/api/browser/v2/";
 
-    private _browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({});
+	private _browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({}, { timeout: 66000, max_tries: 3, interval: 1000 }, {timeout:65000});
 
     public options: IBrowserApiOptions;
 
@@ -118,7 +140,9 @@ export class BrowserApi {
 
         //this._browserV2RequestezEndpoint.post(task.userRequest, "hi", "bye", 123);
 
-        return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, undefined, { origin: task.customOptions.endpointOrigin, path: finalPath })
+		
+
+        return this._browserV2RequestezEndpoint.post(task.userRequest, task.customOptions.requestOptions, task.customOptions.retryOptions, { origin: task.customOptions.endpointOrigin, path: finalPath })
             //return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, finalPath)
             .then((httpResponse) => {
                 //log.debug("_task_worker httpResponse", httpResponse.data);
@@ -160,6 +184,7 @@ export class BrowserApi {
             customOptions = {};
         }
 
+		//convert the request into a userRequest object, if it was a pageRequest
         let _request = request as any;
         let userRequest: ioDatatypes.IUserRequest;
         if (_request.pages != null && _.isArray(_request.pages)) {

@@ -61,7 +61,7 @@ var BrowserApi = (function () {
     function BrowserApi(keyOrOptions) {
         if (keyOrOptions === void 0) { keyOrOptions = {}; }
         this._endpointPath = "/api/browser/v2/";
-        this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint({});
+        this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint({}, { timeout: 66000, max_tries: 3, interval: 1000 }, { timeout: 65000 });
         if (typeof keyOrOptions === "string") {
             this.options = { apiKey: keyOrOptions };
         }
@@ -87,7 +87,7 @@ var BrowserApi = (function () {
          */
         var finalPath = this._endpointPath + task.customOptions.apiKey + "/";
         //this._browserV2RequestezEndpoint.post(task.userRequest, "hi", "bye", 123);
-        return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, undefined, { origin: task.customOptions.endpointOrigin, path: finalPath })
+        return this._browserV2RequestezEndpoint.post(task.userRequest, task.customOptions.requestOptions, task.customOptions.retryOptions, { origin: task.customOptions.endpointOrigin, path: finalPath })
             .then(function (httpResponse) {
             //log.debug("_task_worker httpResponse", httpResponse.data);
             return Promise.resolve(httpResponse.data);
@@ -114,6 +114,7 @@ var BrowserApi = (function () {
         if (customOptions == null) {
             customOptions = {};
         }
+        //convert the request into a userRequest object, if it was a pageRequest
         var _request = request;
         var userRequest;
         if (_request.pages != null && _.isArray(_request.pages)) {

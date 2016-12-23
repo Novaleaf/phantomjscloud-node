@@ -65,9 +65,19 @@ This library provides a simple and high quality mechanism for interacting with [
 ### ```var browser = new phantomJsCloud.BrowserApi(apiKeyOrOptions?) : BrowserApi;```
 Constructing the browserApi, and optionally for setting default configuration options.
 
-- **```apiKeyOrOptions```**: Optional.  If set, can be either an ```apiKey:string``` or an ```options``` object with the parameters ```{apiKey?; endpointOrigin?}```.  
- - ```apiKey:string``` If not set, the default "demo" key is used with the public cloud endpoint. If you use the default demo key, you get 100 Pages/Day.  If you sign up for an account at [PhantomJsCloud.com](https://PhantomJsCloud.com) you will get 500 Pages/Day free.
-  - ```endpointOrigin:string``` Used if you subscribe to a Private Cloud + SLA.  Defaults to the PhantomJs Cloud Public Endpoint.
+- **```apiKeyOrOptions```**: Optional.  If set, can be either an ```apiKey:string``` 
+or an ```options``` object with the parameters ```{apiKey, endpointOrigin, suppressDemoKeyWarning, requestOptions, retryOptions }```.  
+  - ```apiKey:string```  Optional. If not set, the default "demo" key is used with the public cloud endpoint. If you use the default demo key, you get 100 Pages/Day.  If you sign up for an account at [PhantomJsCloud.com](https://PhantomJsCloud.com) you will get 500 Pages/Day free.
+  - ```endpointOrigin:string```  Optional. Used if you subscribe to a Private Cloud + SLA.  Defaults to the PhantomJs Cloud Public Endpoint.
+  - ```suppressDemoKeyWarning```  Optional.  set to true to not show a warning for using demo keys.
+  - ```requestOptions``` Optional. override HTTP request options, default to undefined (use defaults).  Takes the following parameters:
+    - ```timeout``` Optional.   default timeout for the network request is 65000 (65 seconds)
+  - ```retryOptions``` Optional.  override network failure retry options, default to undefined (use defaults)  Takes the following parameters:
+    - ```timeout```  Optional.   assumes the network request timed out if it takes longer than this.  default is 66000 (66 seconds)
+    - ```max_tries```  Optional.  maximum number of attempts to try the operation.   default is 3
+    - ```interval```  Optional.  initial wait time between retry attempts in milliseconds(default 1000)
+    - ```backoff```  Optional.  if specified, increase interval by this factor between attempts
+    - ```max_interval```  Optional.  if specified, maximum amount that interval can increase to
 - **```RETURNS```**: A ```BrowserApi``` object that is used to make the requests to the PhantomJs Cloud.
 
 ### ```browser.requestSingle(request, customOptions?, callback?) : Promise<IUserResponse>```
