@@ -29,7 +29,7 @@ export interface IPdfOptions {
     height?: string;
     /** Border is optional and defaults to 0. A non-uniform border can be specified in the form {left: '2cm', top: '2cm', right: '2cm', bottom: '3cm'} Use of ```px``` is strongly recommended.  */
     border?: string;
-    /** Supported formats are: 'A3', 'A4', 'A5', 'Legal', 'Letter', 'Tabloid'.  Internally we convert this to a width+height using 150dpi. */
+    /** Supported formats are: 'A3', 'A4', 'A5', 'Legal', 'Letter', 'Tabloid'. . */
     format?: string;
     /** optional.   ('portrait', 'landscape')  and defaults to 'portrait' */
     orientation?: string;
@@ -37,6 +37,8 @@ export interface IPdfOptions {
     header?: IPdfHeaderFooter;
     /** settings for footers of the pdf */
     footer?: IPdfHeaderFooter;
+    /** set the DPI for pdf generation.  defaults to 150, which causes each page to be 2x as large (use "fit to paper" when printing)  If you want exact, proper page dimensions, set this to 72. */
+    dpi?: number;
 }
 /**Various methods in the phantom object, as well as in WebPage instances, utilize phantom.cookies objects. These are best created via object literals. */
 export interface ICookie {
@@ -65,7 +67,7 @@ export interface IUrlSettings {
 /** settings related to requesting internet resources (your page and resources referenced by your page) */
 export interface IRequestSettings {
     /**
-     *  set to true to skip loading of inlined images
+     *  set to true to skip loading of inlined images.  If you are not outputing a screenshot, you can usually set this to true, which will decrease load times.
      */
     ignoreImages?: boolean;
     /**
@@ -143,9 +145,7 @@ export interface IRequestSettings {
  * You can pass in either the url to a script to load, or the text of the script itself.  Example: ```scripts:{domReady:["//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.js","return 'Hello, World!';"]}```
  * **OUTPUT**
  * Your scripts can return data to you in the ```pageResponse.scriptOutput``` object.  You can access this directly via ```windows._pjscMeta.scriptOutput``` or your script can simply return a value and it will be set as the ```scriptOutput``` (not available on external, url loaded scripts)
- * Also, if you use the ```pageRequest.renderType="script"``` setting, your response will be the ```scriptOutput``` itself (in JSON format) which allows you to construct your own custom API.  A very powerfull feature!
- * **METADATA**
- *
+ * Also, if you use the ```pageRequest.renderType="script"``` setting, your response will be the ```scriptOutput``` itself (in JSON format) which allows you to construct your own custom API.  A very powerfull feature! *
  */
 export interface IScripts {
     /**
@@ -191,19 +191,13 @@ export interface IPageRequest {
     renderSettings?: IRenderSettings;
     /**
      * Execute your own custom JavaScript inside the page being loaded.
-     * **INPUT**
-     * You can pass in either the url to a script to load, or the text of the script itself.  Example: ```scripts:{domReady:["//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.js","return 'Hello, World!';"]}```
-     * **OUTPUT**
-     * Your scripts can return data to you in the ```pageResponse.scriptOutput``` object.  You can access this directly via ```windows._pjscMeta.scriptOutput``` or your script can simply return a value and it will be set as the ```scriptOutput``` (not available on external, url loaded scripts)
-     * Also, if you use the ```pageRequest.renderType="script"``` setting, your response will be the ```scriptOutput``` itself (in JSON format) which allows you to construct your own custom API.  A very powerfull feature!
-     * **METADATA**
-     *
+     * see ```IScripts``` docs for more details.
      */
     scripts?: IScripts;
 }
 export declare function pageRequestDefaultsGet(): IPageRequest;
 /**
- * properties exposed to your custom ```scripts``` via ```window._pjscMeta``` *
+ * properties exposed to your custom ```scripts``` via ```window._pjscMeta```
  */
 export interface IScriptPjscMeta {
     /** Scripts can access (readonly) details about the page being loaded via ```window._pjscMeta.pageResponse```  See [IPageResponse](#_io_datatypes_.ipageresponse)  for more details. */
@@ -212,13 +206,22 @@ export interface IScriptPjscMeta {
     scriptOutput: {};
     /** how many custom scripts have been loaded so far*/
     scriptsExecuted: number;
+    /** set to false by default.  if true, will delay rendering until you set it back to false. good if you are waiting on an AJAX event. */
+    manualWait: boolean;
+    /** set to false by default.   set to true to force rendering immediately.  good for example, when you want to render as soon as domReady happens */
+    forceFinish: boolean;
+    /** allows you to override specific pageRequest options with values you compute in your script (based on the document at runtime) */
+    optionsOverrides: {
+        /** set the clipRectangle for image rendering.   here is an example you can run in your domReady or loadFinished script: ```_pjscMeta.optionsOverrides.clipRectangle = document.querySelector("h1").getBoundingClientRect();```  */
+        clipRectangle?: IClipRectangleOptions;
+    };
 }
 /** regex + adjustment parametes for modifying or rejecting resources being loaded by the webpage.    Example:  ```{regex:".*css.*",isBlacklisted:true}```  */
 export interface IResourceModifier {
     /** pattern used to match a resource's url
     examples:  it really depends what the site is and what you are wanting to block, but for example to block anything with the text "facebook" or "linkedin" in the url:
 
-```requestModifiers:[{regex:".*facebook.*",isBlacklisted:true},{regex:".*linkedin.*",isBlacklisted:true}]```
+    ```javascript requestModifiers:[{regex:".*facebook.*",isBlacklisted:true},{regex:".*linkedin.*",isBlacklisted:true}]```
     
     It's especially useful if you just need the text, as you can block all css files from loading, such as: ```".*\.css.*"```
       
@@ -239,6 +242,13 @@ export interface IResourceModifier {
         [key: string]: string;
     };
 }
+/** This property defines the rectangular area of the web page to be rasterized when using the requestType of png or jpeg. If no clipping rectangle is set, the entire web page is captured. */
+export interface IClipRectangleOptions {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+}
 /** when a page is rendered, use these settings.  */
 export interface IRenderSettings {
     /** jpeg quality.  0 to 100.  default 70.  ignored for png */
@@ -255,8 +265,7 @@ export interface IRenderSettings {
         },
         height: "11in",
         orientation: "portrait",
-        width: "8.5in",
-    }
+        width: "8.5in", 	}
     ``` */
     pdfOptions?: IPdfOptions;
     /** size of the browser in pixels*/
@@ -269,12 +278,7 @@ export interface IRenderSettings {
     zoomFactor?: number;
     /** This property defines the rectangular area of the web page to be rasterized when using the requestType of png or jpeg. If no clipping rectangle is set, the entire web page is captured.
     Beware: if you capture too large an  image it can cause your request to fail (out of memory).  you can choose any dimensions you wish as long as you do not exceed 32M pixels */
-    clipRectangle?: {
-        top: number;
-        left: number;
-        width: number;
-        height: number;
-    };
+    clipRectangle?: IClipRectangleOptions;
     /** specify an IFrame to render instead of the full page.  must be the frame's name.*/
     renderIFrame?: string;
     /** default false.   If true, we will pass through all headers received from the target URL, with the exception of "Content-Type" (unless the renderType=```html```)*/
@@ -358,9 +362,9 @@ export interface IUserResponse {
         statusCode: number;
     };
     /** metadata about the transaction */
-    meta: {
+    meta?: {
         /** information about the PhantomJsCloud.com system processing this transaction*/
-        backend: {
+        backend?: {
             os: string;
             /** identifier of the system, for troubleshooting purposes */
             id: string;
@@ -375,7 +379,7 @@ export interface IUserResponse {
         NOTE: the creditCost, prepaidCreditsRemaining, and dailySubscriptionCreditsRemaining are also returning in the HTTP Response Headers via the keys
         ```pjsc-credit-cost```, ```pjsc-daily-subscription-credits-remaining```, and ```pjsc-prepaid-credits-remaining```
         */
-        billing: {
+        billing?: {
             elapsedMs: number;
             bytes: number;
             /** the total cost of this response */

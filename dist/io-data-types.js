@@ -43,6 +43,7 @@ function pageRequestDefaultsGet() {
                 height: null,
                 orientation: "portrait",
                 width: null,
+                dpi: 150,
             },
             clipRectangle: null,
             renderIFrame: null,
