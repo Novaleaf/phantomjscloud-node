@@ -3,7 +3,6 @@ var refs = require("./refs");
 var xlib = refs.xlib;
 var Promise = xlib.promise.bluebird;
 var _ = xlib.lodash;
-var log = new xlib.logging.Logger(__filename);
 //export function debugLog(...args: any[]): void {
 //	if (isDebug !== true) {
 //		return;
@@ -13,8 +12,9 @@ var log = new xlib.logging.Logger(__filename);
 //	console.log.apply(console, args);
 //	//console.log("\n");
 //}
-/**set to true to enable debug outputs */
-exports.isDebug = false;
+///**set to true to enable debug outputs */
+//export let isDebug = false;
+var log = new xlib.logging.Logger(__filename, xlib.environment.LogLevel.WARN);
 /**
  * options for the AutoscaleConsumer
  */
@@ -22,7 +22,7 @@ var AutoscaleConsumerOptions = (function () {
     function AutoscaleConsumerOptions() {
         /** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=2 */
         this.workerMin = 2;
-        /** maximum number of parallel workers.  default=30 */
+        /** maximum number of parallel workers.  default=60 */
         this.workerMax = 60;
         /** if there is pending work, how long (in ms) to wait before increasing our number of workers.  This should not be too fast otherwise you can overload the autoscaler.  default=3000 (3 seconds), which would result in 20 workers after 1 minute of operation on a very large work queue. */
         this.workersLinearGrowthMs = 3000;

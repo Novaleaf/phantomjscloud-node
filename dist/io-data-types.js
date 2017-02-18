@@ -1,13 +1,13 @@
 "use strict";
 function pageRequestDefaultsGet() {
     var pageRequestDefaults = {
-        url: null,
-        content: null,
+        url: undefined,
+        content: undefined,
         urlSettings: {
             operation: "GET",
             encoding: "utf8",
             headers: {},
-            data: null
+            data: undefined
         },
         renderType: "jpg",
         outputAsJson: false,
@@ -34,19 +34,19 @@ function pageRequestDefaultsGet() {
         renderSettings: {
             quality: 70,
             pdfOptions: {
-                border: null,
+                border: undefined,
                 footer: {
-                    firstPage: null, height: "1cm", lastPage: null, onePage: null, repeating: "<span style='float:right'>%pageNum%/%numPages%</span>"
+                    firstPage: undefined, height: "1cm", lastPage: undefined, onePage: undefined, repeating: "<span style='float:right'>%pageNum%/%numPages%</span>"
                 },
                 format: "letter",
-                header: null,
-                height: null,
+                header: undefined,
+                height: undefined,
                 orientation: "portrait",
-                width: null,
+                width: undefined,
                 dpi: 150,
             },
-            clipRectangle: null,
-            renderIFrame: null,
+            clipRectangle: undefined,
+            renderIFrame: undefined,
             viewport: { height: 1280, width: 1280 },
             zoomFactor: 1.0,
             passThroughHeaders: false,

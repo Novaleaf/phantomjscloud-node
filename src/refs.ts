@@ -2,7 +2,7 @@
 //specify xlib config options, without requiring environmental config
 (global as any)._xlibConfigDefaults = {
     ...{
-        logLevel: "ERROR",
+        logLevel: "WARN",
         envLevel: "PROD",
         isTest: "FALSE",
         isDev: "FALSE",

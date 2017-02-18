@@ -1,5 +1,4 @@
 export import ioDatatypes = require("./io-data-types");
-export declare function setDebug(isDebug: boolean): void;
 /**
  * errors thrown by this module derive from this
  */

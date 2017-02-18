@@ -9,7 +9,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 };
 //specify xlib config options, without requiring environmental config
 global._xlibConfigDefaults = __assign({}, {
-    logLevel: "ERROR",
+    logLevel: "WARN",
     envLevel: "PROD",
     isTest: "FALSE",
     isDev: "FALSE",

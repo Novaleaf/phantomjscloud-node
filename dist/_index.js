@@ -1,9 +1,14 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var refs = require("./refs");
 var xlib = refs.xlib;
 var Promise = xlib.promise.bluebird;
@@ -16,17 +21,16 @@ exports.ioDatatypes = require("./io-data-types");
  *  helper utils used by the phantomjscloud api.
  */
 var utils = require("./utils");
-function setDebug(isDebug) {
-    utils.isDebug = isDebug;
-}
-exports.setDebug = setDebug;
+//export function setDebug(isDebug: boolean) {
+//    utils.isDebug = isDebug;
+//}
 /**
  * errors thrown by this module derive from this
  */
 var PhantomJsCloudException = (function (_super) {
     __extends(PhantomJsCloudException, _super);
     function PhantomJsCloudException() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return PhantomJsCloudException;
 }(Error));
@@ -80,66 +84,72 @@ var BrowserApi = (function () {
      * @param task
      */
     BrowserApi.prototype._task_worker = function (task) {
-        log.debug("_task_worker START");
-        _.defaults(task.customOptions, this.options);
-        /**
-         *  path including apiKey
-         */
-        var finalPath = this._endpointPath + task.customOptions.apiKey + "/";
-        //this._browserV2RequestezEndpoint.post(task.userRequest, "hi", "bye", 123);
-        return this._browserV2RequestezEndpoint.post(task.userRequest, task.customOptions.requestOptions, task.customOptions.retryOptions, { origin: task.customOptions.endpointOrigin, path: finalPath })
-            .then(function (httpResponse) {
-            //log.debug("_task_worker httpResponse", httpResponse.data);
-            return Promise.resolve(httpResponse.data);
-        }, function (err) {
-            var errResponse = err.innerData;
-            return Promise.reject(err);
-            //log.debug("_task_worker errResponse", errResponse);
-            //let statusCode = errResponse.status;
-            //let ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode, statusCode, errResponse.data, errResponse.headers as any);
-            //return Promise.reject(ex);
-        }).finally(function () {
-            log.debug("_task_worker FINISH");
+        var _this = this;
+        return Promise.try(function () {
+            log.debug("_task_worker START");
+            _.defaults(task.customOptions, _this.options);
+            /**
+             *  path including apiKey
+             */
+            var finalPath = _this._endpointPath + task.customOptions.apiKey + "/";
+            //this._browserV2RequestezEndpoint.post(task.userRequest, "hi", "bye", 123);
+            return _this._browserV2RequestezEndpoint.post(task.userRequest, task.customOptions.requestOptions, task.customOptions.retryOptions, { origin: task.customOptions.endpointOrigin, path: finalPath })
+                .then(function (httpResponse) {
+                //log.warn("_task_worker httpResponse", httpResponse.data);
+                return Promise.resolve(httpResponse.data);
+            }, function (err) {
+                //log.warn("_task_worker errResponse", err);
+                //let errResponse: Axios.AxiosXHR<ioDatatypes.IUserResponse> = err.innerData
+                return Promise.reject(err);
+                //let statusCode = errResponse.status;
+                //let ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode, statusCode, errResponse.data, errResponse.headers as any);
+                //return Promise.reject(ex);
+            }).finally(function () {
+                log.debug("_task_worker FINISH");
+            });
         });
     };
     BrowserApi.prototype.requestSingle = function (request, customOptions, callback) {
-        log.debug("requestSingle");
-        if (callback == null && customOptions != null) {
-            //handle function overload
-            if (typeof customOptions == "function") {
-                callback = customOptions;
-                customOptions = undefined;
+        var _this = this;
+        return Promise.try(function () {
+            log.debug("requestSingle");
+            if (callback == null && customOptions != null) {
+                //handle function overload
+                if (typeof customOptions == "function") {
+                    callback = customOptions;
+                    customOptions = undefined;
+                }
             }
-        }
-        if (customOptions == null) {
-            customOptions = {};
-        }
-        //convert the request into a userRequest object, if it was a pageRequest
-        var _request = request;
-        var userRequest;
-        if (_request.pages != null && _.isArray(_request.pages)) {
-            userRequest = _request;
-        }
-        else {
-            userRequest = { pages: [_request] };
-        }
-        //set outputAsJson
-        _.forEach(userRequest.pages, function (page) { page.outputAsJson = true; });
-        var task = {
-            userRequest: userRequest,
-            customOptions: customOptions
-        };
-        return this._autoscaler.process(task)
-            .then(function (result) {
-            if (callback != null) {
-                callback(undefined, result);
+            if (customOptions == null) {
+                customOptions = {};
             }
-            return Promise.resolve(result);
-        }, function (err) {
-            if (callback != null) {
-                callback(err, undefined);
+            //convert the request into a userRequest object, if it was a pageRequest
+            var _request = request;
+            var userRequest;
+            if (_request.pages != null && _.isArray(_request.pages)) {
+                userRequest = _request;
             }
-            return Promise.reject(err);
+            else {
+                userRequest = { pages: [_request] };
+            }
+            //set outputAsJson
+            _.forEach(userRequest.pages, function (page) { page.outputAsJson = true; });
+            var task = {
+                userRequest: userRequest,
+                customOptions: customOptions
+            };
+            return _this._autoscaler.process(task)
+                .then(function (result) {
+                if (callback != null) {
+                    callback(undefined, result);
+                }
+                return Promise.resolve(result);
+            }, function (err) {
+                if (callback != null) {
+                    callback(err, undefined);
+                }
+                return Promise.reject(err);
+            });
         });
     };
     BrowserApi.prototype.requestBatch = function (requests, customOptions, callback) {
@@ -185,19 +195,41 @@ exports.BrowserApi = BrowserApi;
 var _test;
 (function (_test) {
     describe(__filename, function () {
-        describe("basic browserApi functionality", function () {
-            it("plainText example.com", function () {
-                var browserApi = new BrowserApi();
-                var pageRequest = {
-                    url: "https://www.example.com",
-                    renderType: "plainText",
-                };
-                return browserApi.requestSingle(pageRequest)
-                    .then(function (pjscResponse) {
-                    if (pjscResponse.content.data.indexOf("example") >= 0) {
-                        return Promise.resolve();
-                    }
-                    return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse: pjscResponse }));
+        describe("success cases", function () {
+            describe("basic browserApi functionality", function () {
+                it("plainText example.com", function () {
+                    var browserApi = new BrowserApi();
+                    var pageRequest = {
+                        url: "https://www.example.com",
+                        renderType: "plainText",
+                    };
+                    return browserApi.requestSingle(pageRequest)
+                        .then(function (pjscResponse) {
+                        if (pjscResponse.content.data.indexOf("example") >= 0) {
+                            return Promise.resolve();
+                        }
+                        return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse: pjscResponse }));
+                    });
+                });
+            });
+        });
+        describe("fail cases", function () {
+            describe("network failures", function () {
+                it("invalid domain", function () {
+                    var browserApi = new BrowserApi();
+                    var pageRequest = {
+                        url: "https://www.exadsfakjalkjghlalkjrtiuibe.com",
+                        renderType: "plainText",
+                    };
+                    return browserApi.requestSingle(pageRequest)
+                        .then(function (pjscResponse) {
+                        throw log.error("should have failed", { pjscResponse: pjscResponse });
+                    }, function (err) {
+                        if (err.response != null) {
+                            var axiosErr = err;
+                            log.assert(axiosErr.response != null && axiosErr.response.status === 424, "expected error status 424", { axiosErr: axiosErr });
+                        }
+                    });
                 });
             });
         });

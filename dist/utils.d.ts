@@ -2,15 +2,13 @@
 import refs = require("./refs");
 import xlib = refs.xlib;
 import Promise = xlib.promise.bluebird;
-/**set to true to enable debug outputs */
-export declare let isDebug: boolean;
 /**
  * options for the AutoscaleConsumer
  */
 export declare class AutoscaleConsumerOptions {
     /** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=2 */
     workerMin: number;
-    /** maximum number of parallel workers.  default=30 */
+    /** maximum number of parallel workers.  default=60 */
     workerMax: number;
     /** if there is pending work, how long (in ms) to wait before increasing our number of workers.  This should not be too fast otherwise you can overload the autoscaler.  default=3000 (3 seconds), which would result in 20 workers after 1 minute of operation on a very large work queue. */
     workersLinearGrowthMs: number;

@@ -4,7 +4,6 @@ import xlib = refs.xlib;
 import Promise = xlib.promise.bluebird;
 import _ = xlib.lodash;
 
-let log = new xlib.logging.Logger(__filename);
 
 
 //export function debugLog(...args: any[]): void {
@@ -18,8 +17,12 @@ let log = new xlib.logging.Logger(__filename);
 //}
 
 
-/**set to true to enable debug outputs */
-export let isDebug = false;
+///**set to true to enable debug outputs */
+//export let isDebug = false;
+
+
+
+let log = new xlib.logging.Logger(__filename, xlib.environment.LogLevel.WARN);
 
 
 /**
@@ -28,7 +31,7 @@ export let isDebug = false;
 export class AutoscaleConsumerOptions {
 	/** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=2 */
 	public workerMin: number = 2;
-	/** maximum number of parallel workers.  default=30 */
+	/** maximum number of parallel workers.  default=60 */
 	public workerMax: number = 60;
 	/** if there is pending work, how long (in ms) to wait before increasing our number of workers.  This should not be too fast otherwise you can overload the autoscaler.  default=3000 (3 seconds), which would result in 20 workers after 1 minute of operation on a very large work queue. */
 	public workersLinearGrowthMs = 3000;
@@ -39,9 +42,9 @@ export class AutoscaleConsumerOptions {
 }
 
 interface IPendingTask<TInput,TOutput> {
-    input: TInput;
-    resolve: (result: TOutput) => void;
-    reject: (error: Error) => void;
+	input: TInput;
+	resolve: (result: TOutput) => void;
+	reject: (error: Error) => void;
 }
 
 /**
@@ -59,7 +62,7 @@ export class AutoscaleConsumer<TInput, TOutput>{
 		_.defaults(options, defaultOptions);
 	}
 
-    private _pendingTasks: IPendingTask<TInput, TOutput>[] = [];
+	private _pendingTasks: IPendingTask<TInput, TOutput>[] = [];
 
 
 	public process(input: TInput): Promise<TOutput> {
@@ -134,21 +137,21 @@ export class AutoscaleConsumer<TInput, TOutput>{
 				setTimeout(() => { this._workerLoop(idleMs + this.options.workerReaquireMs) }, this.options.workerReaquireMs);
 			}
 			return;
-        }
+		}
 
-        let work = this._pendingTasks.shift() as IPendingTask<TInput, TOutput>;
-        if (work == null) {
-            throw log.error("pending task is non existant", { work, pendingCount: this._pendingTasks.length });
-        }       
+		let work = this._pendingTasks.shift() as IPendingTask<TInput, TOutput>;
+		if (work == null) {
+			throw log.error("pending task is non existant", { work, pendingCount: this._pendingTasks.length });
+		}       
 
-        Promise.try(() => {
+		Promise.try(() => {
 			log.debug("AUTOSCALECONSUMER._workerLoop() starting request processing (workProcessor) concurrent=" + this._workerCount);
 			return this._workProcessor(work.input);
 		}).then((output) => {
-            log.debug("AUTOSCALECONSUMER._workerLoop() finished workProcessor() SUCCESS. concurrent=" + this._workerCount);
+			log.debug("AUTOSCALECONSUMER._workerLoop() finished workProcessor() SUCCESS. concurrent=" + this._workerCount);
 			work.resolve(output);
 		}, (error) => {
-            log.debug("AUTOSCALECONSUMER._workerLoop() finished workProcessor() ERROR. concurrent=" + this._workerCount);
+			log.debug("AUTOSCALECONSUMER._workerLoop() finished workProcessor() ERROR. concurrent=" + this._workerCount);
 			work.reject(error);
 		}).finally(() => {
 
@@ -162,7 +165,7 @@ export class AutoscaleConsumer<TInput, TOutput>{
 
 	private _workerLoop_disposeHelper() {
 
-        log.debug("AUTOSCALECONSUMER._workerLoop() already idle too long, dispose.   concurrent=" + this._workerCount);
+		log.debug("AUTOSCALECONSUMER._workerLoop() already idle too long, dispose.   concurrent=" + this._workerCount);
 		this._workerCount--;
 	}
 

@@ -255,13 +255,13 @@ export interface IPageRequest {
 
 export function pageRequestDefaultsGet(): IPageRequest {
     let pageRequestDefaults: IPageRequest = {
-        url: null,
-        content: null,
+        url: (undefined as any),
+        content: undefined,
         urlSettings: {
             operation: "GET",
             encoding: "utf8",
             headers: {},
-            data: null
+            data: undefined
         },
         renderType: "jpg",
         outputAsJson: false,
@@ -288,19 +288,19 @@ export function pageRequestDefaultsGet(): IPageRequest {
         renderSettings: {
             quality: 70,
             pdfOptions: {
-                border: null, //"1cm",
+                border: undefined, //"1cm",
                 footer: {
-                    firstPage: null, height: "1cm", lastPage: null, onePage: null, repeating: "<span style='float:right'>%pageNum%/%numPages%</span>"
+                    firstPage: undefined, height: "1cm", lastPage: undefined, onePage: undefined, repeating: "<span style='float:right'>%pageNum%/%numPages%</span>"
                 },
                 format: "letter",
-                header: null,
-                height: null,
+                header: undefined,
+                height: undefined,
                 orientation: "portrait",
-                width: null,
+                width: undefined,
                 dpi: 150,
             },
-            clipRectangle: null, //{height:8000, width:8000 , top:0, left:0},
-            renderIFrame: null,
+            clipRectangle: undefined, //{height:8000, width:8000 , top:0, left:0},
+            renderIFrame: undefined,
             viewport: { height: 1280, width: 1280 },
             zoomFactor: 1.0,
             passThroughHeaders: false,
