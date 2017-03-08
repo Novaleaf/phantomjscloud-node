@@ -56,7 +56,7 @@ exports.PhantomJsCloudBrowserApiException = PhantomJsCloudBrowserApiException;
  *  the defaults used if options are not passed to a new BrowserApi object.
  */
 exports.defaultBrowserApiOptions = {
-    endpointOrigin: "https://PhantomJsCloud.com",
+    endpointOrigin: "http://PhantomJsCloud.com",
     apiKey: "a-demo-key-with-low-quota-per-ip-address",
     suppressDemoKeyWarning: false,
 };
@@ -199,8 +199,8 @@ exports.BrowserApi = BrowserApi;
 var _test;
 (function (_test) {
     describe(__filename, function () {
-        //let browserApi = new BrowserApi();
-        var browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
+        var browserApi = new BrowserApi();
+        //let browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
         describe("success cases", function () {
             describe("basic browserApi functionality", function () {
                 it("plainText example.com", function () {

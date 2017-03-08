@@ -79,7 +79,7 @@ export interface IBrowserApiOptions {
  *  the defaults used if options are not passed to a new BrowserApi object.
  */
 export let defaultBrowserApiOptions: IBrowserApiOptions = {
-	endpointOrigin: "https://PhantomJsCloud.com",
+	endpointOrigin: "http://PhantomJsCloud.com",
 	apiKey: "a-demo-key-with-low-quota-per-ip-address",
 	suppressDemoKeyWarning: false,	
 }
@@ -277,8 +277,8 @@ namespace _test {
 
 	describe(__filename, () => {
 
-		//let browserApi = new BrowserApi();
-		let browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
+		let browserApi = new BrowserApi();
+		//let browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
 
 		describe("success cases", () => {
 			describe("basic browserApi functionality", () => {
