@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var refs = require("./refs");
 var xlib = refs.xlib;
 var Promise = xlib.promise.bluebird;

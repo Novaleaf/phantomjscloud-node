@@ -7,6 +7,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     }
     return t;
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 //specify xlib config options, without requiring environmental config
 global._xlibConfigDefaults = __assign({}, {
     logLevel: "WARN",

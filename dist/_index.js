@@ -9,10 +9,12 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+Object.defineProperty(exports, "__esModule", { value: true });
 var refs = require("./refs");
 var xlib = refs.xlib;
 var Promise = xlib.promise.bluebird;
 var _ = xlib.lodash;
+var __ = xlib.lolo;
 var log = new xlib.logging.Logger(__filename);
 //import Promise = refs.Promise;
 //import PromiseRetry = refs.PromiseRetry;
@@ -77,7 +79,7 @@ var BrowserApi = (function () {
             console.warn("\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n");
         }
         //this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({origin:this.options.endpointOrigin, path});
-        this._autoscaler = new utils.AutoscaleConsumer(this._task_worker.bind(this));
+        this._autoscaler = new utils.AutoscaleConsumer(this._task_worker.bind(this), this.options.autoscale);
     }
     /**
      * the autoscaler worker function
@@ -133,7 +135,9 @@ var BrowserApi = (function () {
                 userRequest = { pages: [_request] };
             }
             //set outputAsJson
-            _.forEach(userRequest.pages, function (page) { page.outputAsJson = true; });
+            _.forEach(userRequest.pages, function (page) {
+                page.outputAsJson = true;
+            });
             var task = {
                 userRequest: userRequest,
                 customOptions: customOptions
@@ -195,10 +199,11 @@ exports.BrowserApi = BrowserApi;
 var _test;
 (function (_test) {
     describe(__filename, function () {
+        //let browserApi = new BrowserApi();
+        var browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
         describe("success cases", function () {
             describe("basic browserApi functionality", function () {
                 it("plainText example.com", function () {
-                    var browserApi = new BrowserApi();
                     var pageRequest = {
                         url: "https://www.example.com",
                         renderType: "plainText",
@@ -212,18 +217,51 @@ var _test;
                     });
                 });
             });
+            describe("perf tests", function () {
+                var fs = require("fs");
+                var svg_sample_979_17470485_content = fs.readFileSync(__dirname + "/../tests/svg-sample-979_17470485.html", { encoding: "utf8" });
+                var test = it("svg gen sample 979_17470485", function () {
+                    var basicPageRequest = {
+                        url: "https://www.example.com",
+                        renderType: "plainText",
+                    };
+                    var testRequest_complexSvgSmallPng = {
+                        "url": "",
+                        "content": svg_sample_979_17470485_content,
+                        "renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
+                    };
+                    //warm up request
+                    var startBasic = __.utcNowTimestamp();
+                    return browserApi.requestSingle(basicPageRequest)
+                        .then(function () {
+                        var endBasic = __.utcNowTimestamp();
+                        log.warn("basicElapsed...", endBasic - startBasic);
+                        var startTest = __.utcNowTimestamp();
+                        return browserApi.requestSingle(testRequest_complexSvgSmallPng)
+                            .then(function (pjscResponse) {
+                            var endTest = __.utcNowTimestamp();
+                            log.warn("testElapsed1", { elapsedMs: endTest - startTest, statusCode: pjscResponse.statusCode });
+                            return Promise.resolve();
+                            // if (pjscResponse.content.data.indexOf("example") >= 0) {
+                            // 	return Promise.resolve();
+                            // }
+                            // return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse }));
+                        });
+                    });
+                });
+                test.timeout(10000);
+            });
         });
         describe("fail cases", function () {
             describe("network failures", function () {
-                it("invalid domain", function () {
-                    var browserApi = new BrowserApi();
+                var test = it("invalid domain", function () {
                     var pageRequest = {
                         url: "https://www.exadsfakjalkjghlalkjrtiuibe.com",
                         renderType: "plainText",
                     };
                     return browserApi.requestSingle(pageRequest)
                         .then(function (pjscResponse) {
-                        throw log.error("should have failed", { pjscResponse: pjscResponse });
+                        throw log.error("should have failed...", { pjscResponse: pjscResponse });
                     }, function (err) {
                         if (err.response != null) {
                             var axiosErr = err;
@@ -231,6 +269,7 @@ var _test;
                         }
                     });
                 });
+                test.timeout(10000);
             });
         });
     });

@@ -1,5 +1,9 @@
 export import ioDatatypes = require("./io-data-types");
 /**
+ *  helper utils used by the phantomjscloud api.
+ */
+import utils = require("./utils");
+/**
  * errors thrown by this module derive from this
  */
 export declare class PhantomJsCloudException extends Error {
@@ -44,6 +48,8 @@ export interface IBrowserApiOptions {
         /** if specified, maximum amount that interval can increase to*/
         max_interval?: number;
     };
+    /** allow customizing the local autoscaler.  For advanced optimization only! we do NOT recommend doing this, as it can cause most of your requests to fail with 429 (too many simultaneous requests) errors.   */
+    autoscale?: utils.AutoscaleConsumerOptions;
 }
 /**
  *  the defaults used if options are not passed to a new BrowserApi object.

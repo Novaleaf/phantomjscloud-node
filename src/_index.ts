@@ -72,7 +72,8 @@ export interface IBrowserApiOptions {
 		/** if specified, maximum amount that interval can increase to*/
 		max_interval?: number;
 	},
-
+/** allow customizing the local autoscaler.  For advanced optimization only! we do NOT recommend doing this, as it can cause most of your requests to fail with 429 (too many simultaneous requests) errors.   */
+	autoscale?:utils.AutoscaleConsumerOptions;
 }
 /**
  *  the defaults used if options are not passed to a new BrowserApi object.
@@ -80,7 +81,7 @@ export interface IBrowserApiOptions {
 export let defaultBrowserApiOptions: IBrowserApiOptions = {
 	endpointOrigin: "https://PhantomJsCloud.com",
 	apiKey: "a-demo-key-with-low-quota-per-ip-address",
-	suppressDemoKeyWarning: false,
+	suppressDemoKeyWarning: false,	
 }
 
 
@@ -119,7 +120,7 @@ export class BrowserApi {
 		}
 		//this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({origin:this.options.endpointOrigin, path});
 
-		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker.bind(this));
+		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker.bind(this),this.options.autoscale);
 	}
 
 	private _autoscaler: utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>;
@@ -197,7 +198,10 @@ export class BrowserApi {
 				userRequest = { pages: [_request] };
 			}
 			//set outputAsJson
-			_.forEach(userRequest.pages, (page) => { page.outputAsJson = true; });
+			_.forEach(userRequest.pages, (page) => {
+				page.outputAsJson = true;
+			});
+
 
 			let task: IBrowserApiTask = {
 				userRequest,
@@ -273,12 +277,13 @@ namespace _test {
 
 	describe(__filename, () => {
 
+		//let browserApi = new BrowserApi();
+		let browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
+
 		describe("success cases", () => {
 			describe("basic browserApi functionality", () => {
 
 				it("plainText example.com", () => {
-
-					let browserApi = new BrowserApi();
 					let pageRequest: ioDatatypes.IPageRequest = {
 						url: "https://www.example.com",
 						renderType: "plainText",
@@ -294,28 +299,68 @@ namespace _test {
 				});
 
 			});
+			describe("perf tests", () => {
+
+				const fs = require("fs");
+				const svg_sample_979_17470485_content: string = fs.readFileSync(__dirname + "/../tests/svg-sample-979_17470485.html", { encoding: "utf8" });
+
+				let test = it("svg gen sample 979_17470485", () => {
+					const basicPageRequest: ioDatatypes.IPageRequest = {
+						url: "https://www.example.com",
+						renderType: "plainText",
+					};
+					let testRequest_complexSvgSmallPng: ioDatatypes.IPageRequest = {
+						"url": "",
+						"content": svg_sample_979_17470485_content,
+						"renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
+					}
+
+					//warm up request
+					const startBasic = __.utcNowTimestamp();
+					return browserApi.requestSingle(basicPageRequest)
+						.then(() => {
+							const endBasic = __.utcNowTimestamp();
+							log.warn("basicElapsed...", endBasic - startBasic);
+							const startTest = __.utcNowTimestamp();
+							return browserApi.requestSingle(testRequest_complexSvgSmallPng)
+								.then((pjscResponse) => {
+									const endTest = __.utcNowTimestamp();
+									log.warn("testElapsed1", { elapsedMs: endTest - startTest, statusCode: pjscResponse.statusCode });
+									return Promise.resolve();
+									// if (pjscResponse.content.data.indexOf("example") >= 0) {
+									// 	return Promise.resolve();
+									// }
+									// return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse }));
+								});
+						})
+
+
+				});
+				test.timeout(10000);
+
+			});
 		});
 
 		describe("fail cases", () => {
 			describe("network failures", () => {
 
-				it("invalid domain", () => {
+				let test = it("invalid domain", () => {
 
-					let browserApi = new BrowserApi();
 					let pageRequest: ioDatatypes.IPageRequest = {
 						url: "https://www.exadsfakjalkjghlalkjrtiuibe.com",
 						renderType: "plainText",
 					};
 					return browserApi.requestSingle(pageRequest)
-						.then((pjscResponse) => {							
-							throw log.error("should have failed", { pjscResponse });
+						.then((pjscResponse) => {
+							throw log.error("should have failed...", { pjscResponse });
 						}, (err) => {
-							if(err.response!=null){
+							if (err.response != null) {
 								const axiosErr = err as xlib.net._axiosDTs.AxiosErrorResponse<any>;
-								log.assert(axiosErr.response!=null && axiosErr.response.status===424,"expected error status 424",{axiosErr});
+								log.assert(axiosErr.response != null && axiosErr.response.status === 424, "expected error status 424", { axiosErr });
 							}
 						});
 				});
+				test.timeout(10000);
 
 			});
 		});
