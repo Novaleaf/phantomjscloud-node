@@ -28,20 +28,32 @@ let log = new xlib.logging.Logger(__filename, xlib.environment.LogLevel.WARN);
 /**
  * options for the AutoscaleConsumer
  */
-export class AutoscaleConsumerOptions {
-	/** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=2 */
-	public workerMin: number = 2;
+export interface IAutoscaleConsumerOptions {
+	/** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=8 */
+	workerMin: number;
 	/** maximum number of parallel workers.  default=60 */
-	public workerMax: number = 60;
-	/** if there is pending work, how long (in ms) to wait before increasing our number of workers.  This should not be too fast otherwise you can overload the autoscaler.  default=3000 (3 seconds), which would result in 20 workers after 1 minute of operation on a very large work queue. */
-	public workersLinearGrowthMs = 3000;
+	workerMax: number;
+	/** if there is pending work, how long (in ms) to wait before increasing our number of workers.  This should not be too fast otherwise you can overload the autoscaler.  default=4000 (4 seconds), which would result in 15 workers after 1 minute of operation on a very large work queue. */
+	workersLinearGrowthMs: number;
 	/** how long (in ms) for an idle worker (no work remaining) to wait before attempting to grab new work.  default=100 (100 ms) */
-	public workerReaquireMs = 100;
+	workerReaquireMs: number;
 	/** the max time a worker will be idle before disposing itself.  default=10000 (10 seconds) */
-	public workerMaxIdleMs = 10000;
+	workerMaxIdleMs: number;
+}
+const autoscaleConsumerOptionsDefaults: IAutoscaleConsumerOptions = {
+	/** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=8 */
+	workerMin: 8,
+	/** maximum number of parallel workers.  default=60 */
+	workerMax: 60,
+	/** if there is pending work, how long (in ms) to wait before increasing our number of workers.  This should not be too fast otherwise you can overload the autoscaler.  default=4000 (4 seconds), which would result in 15 workers after 1 minute of operation on a very large work queue. */
+	workersLinearGrowthMs: 4000,
+	/** how long (in ms) for an idle worker (no work remaining) to wait before attempting to grab new work.  default=100 (100 ms) */
+	workerReaquireMs: 100,
+	/** the max time a worker will be idle before disposing itself.  default=10000 (10 seconds) */
+	workerMaxIdleMs: 10000,
 }
 
-interface IPendingTask<TInput,TOutput> {
+interface IPendingTask<TInput, TOutput> {
 	input: TInput;
 	resolve: (result: TOutput) => void;
 	reject: (error: Error) => void;
@@ -53,13 +65,14 @@ interface IPendingTask<TInput,TOutput> {
  */
 export class AutoscaleConsumer<TInput, TOutput>{
 
+	public options: IAutoscaleConsumerOptions;
 	constructor(
 		/** The "WorkerThread", this function processes work. it's execution is automatically managed by this object. */
 		private _workProcessor: (input: TInput) => PromiseLike<TOutput>,
-		public options: AutoscaleConsumerOptions = {} as any
+		_options: Partial<IAutoscaleConsumerOptions> = {}
 	) {
-		let defaultOptions = new AutoscaleConsumerOptions();
-		_.defaults(options, defaultOptions);
+		//let defaultOptions = new AutoscaleConsumerOptions();
+		this.options = _.defaults(_options, autoscaleConsumerOptionsDefaults);
 	}
 
 	private _pendingTasks: IPendingTask<TInput, TOutput>[] = [];
@@ -142,7 +155,7 @@ export class AutoscaleConsumer<TInput, TOutput>{
 		let work = this._pendingTasks.shift() as IPendingTask<TInput, TOutput>;
 		if (work == null) {
 			throw log.error("pending task is non existant", { work, pendingCount: this._pendingTasks.length });
-		}       
+		}
 
 		Promise.try(() => {
 			log.debug("AUTOSCALECONSUMER._workerLoop() starting request processing (workProcessor) concurrent=" + this._workerCount);
@@ -173,166 +186,3 @@ export class AutoscaleConsumer<TInput, TOutput>{
 
 }
 
-
-///**
-//*  a helper for constructing reusable endpoint functions
-//*/
-//export class EzEndpointFunction<TSubmitPayload, TRecievePayload>{
-
-//	constructor(
-//		public origin?: string,
-//		public path?: string,
-//		/** default is to retry for up to 10 seconds, (no retries after 10 seconds) */
-//		public retryOptions: refs._BluebirdRetryInternals.IOptions = { timeout: 10000, interval: 100, backoff: 2, max_interval: 5000 },
-//		/** default is to timeout (err 545) after 60 seconds*/
-//		public requestOptions: Axios.AxiosXHRConfigBase<TRecievePayload> = { timeout: 60000 },
-//		/** allows aborting retries (if any).  return a resolved promise to continue retry normally,  return any rejected promise to abort retries and return the result you are returning.
-//		NOTE:   error's of statusCode 545 are request timeouts
-//		DEFAULT:  by default we will retry error 500 and above. */
-//		public preRetryIntercept: (err: Axios.AxiosXHR<TRecievePayload>) => Promise<void> = (err) => {
-//			if (err.status <= 499) {
-//				//console.assert(false, "err");		
-//				let error = new Error(`EzEndpointFunction error.  status=${err.status} statusText=${err.statusText}.  see .innerData for details`);
-//				(error as any)["innerData"] = err;
-//				return Promise.reject(error);
-//			} else {
-//				//5xx error, so retry
-//				return Promise.resolve();
-//			}
-//		}
-//	) {
-
-//	}
-
-//	public toJson() {
-//		return { origin: this.origin, path: this.path, retryOptions: this.retryOptions, requestOptions: this.requestOptions };
-//	}
-
-//	public post(submitPayload?: TSubmitPayload, /**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>, customOrigin: string = this.origin, customPath: string = this.path): Promise<Axios.AxiosXHR<TRecievePayload>> {
-//		//debugLog("EzEndpointFunction .post() called");
-//		let lastErrorResult: any = null;
-//		return PromiseRetry<Axios.AxiosXHR<TRecievePayload>>(() => {
-
-//			try {
-
-//				//debugLog("EzEndpointFunction .post() in PromiseRetry block");
-//				let endpoint = customOrigin + customPath;
-//				//log.debug("EzEndpointFunction axios.post", { endpoint });
-
-
-//				let finalRequestOptions: Axios.AxiosXHRConfigBase<TRecievePayload>;
-//				if (customRequestOptions == null || Object.keys(customRequestOptions).length === 0) {
-//					finalRequestOptions = this.requestOptions;
-//				} else {
-//					finalRequestOptions = _.defaults({}, customRequestOptions, this.requestOptions);
-//				}
-
-//				return (refs.Axios.post<TRecievePayload>(endpoint, submitPayload, finalRequestOptions
-//				) as any as Promise<Axios.AxiosXHR<TRecievePayload>>)
-//					.then((result) => {
-//						debugLog("EzEndpointFunction .post() got valid response");
-//						return Promise.resolve(result);
-//					}, (err: Axios.AxiosXHR<TRecievePayload>) => {
-//						if (err.status == null) {
-//							debugLog("EzEndpointFunction .post() error: unable to contact the server at " + customOrigin);
-//						} else {
-//							debugLog("EzEndpointFunction .post() got err", err.status, err.statusText);
-//						}
-//						//log.info(err);
-//						if (err.status === 0 && err.statusText === "" && err.data === "" as any) {
-//							//log.debug("EzEndpointFunction axios.post timeout.", { endpoint });
-//							err.status = 524;
-//							err.statusText = "A Timeout Occurred";
-//							err.data = "Axios->EzEndpointFunction timeout." as any;
-//						}
-//						if (this.preRetryIntercept != null) { //see if we should retry this or not
-//							return this.preRetryIntercept(err)
-//								.then(() => {
-//									//success result signals that we should retry
-//									lastErrorResult = err;
-//									return Promise.reject(err);
-
-//								}, (interceptResult) => {
-//									//pre-retry reject, so we need to stop retrying.  we do this by wrapping our actual rejection with a "StopError"
-//									let stopError = new PromiseRetry.StopError("preRetryIntercept abort");
-//									(stopError as any)["interceptResult"] = interceptResult;
-//									return Promise.reject(stopError);
-//								})
-
-//							//let interceptResult = this.preRetryIntercept(err);
-//							//if (interceptResult != null) {
-//							//	let stopError = new PromiseRetry.StopError("preRetryIntercept abort");
-//							//	(stopError as any)["interceptResult"] = interceptResult;
-//							//	return Promise.reject(stopError);
-//							//}
-//						} else {
-//							//no pre-retry intercept, so retry everything
-//							lastErrorResult = err;
-//							return Promise.reject(err);
-//						}
-//					});
-
-//			} catch (errThrown) {
-//				debugLog("EzEndpointFunction .post() in root promiseRetry block,  got errThrown", errThrown.toString());
-//				throw errThrown;
-//			}
-
-//		}, this.retryOptions)
-//			.catch((err: any) => {
-//				debugLog("EzEndpointFunction .post()  retry catch");
-//				if (err.interceptResult != null) {
-//					//we aborted retry, so return the actual error that stoped retrying, not our "stopError" wrapper
-//					return Promise.reject(err.interceptResult);
-//				}
-
-//				//let payloadStr = submitPayload == null ? "" : serialization.JSONX.inspectStringify(submitPayload);
-//				//let payloadStrSummarized = stringHelper.summarize(payloadStr, 2000);
-//				//log.error("failed ez call .post()", this.toJson(), err, lastErrorResult, payloadStr.length, payloadStrSummarized);
-//				return Promise.reject(err);
-//			});
-//	}
-//	public get(/**setting a key overrides the key put in ctor.requestOptions. */customRequestOptions?: Axios.AxiosXHRConfigBase<TRecievePayload>, customOrigin: string = this.origin, customPath: string = this.path): Promise<Axios.AxiosXHR<TRecievePayload>> {
-//		debugLog("EzEndpointFunction .get() called");
-//		return PromiseRetry<Axios.AxiosXHR<TRecievePayload>>(() => {
-//			let endpoint = customOrigin + customPath;
-//			//log.debug("EzEndpointFunction axios.get", { endpoint });
-//			//return axios.post<TRecievePayload>(endpoint, submitPayload, this.requestOptions) as any;
-
-//			let finalRequestOptions: Axios.AxiosXHRConfigBase<TRecievePayload>;
-//			if (customRequestOptions == null || Object.keys(customRequestOptions).length === 0) {
-//				finalRequestOptions = this.requestOptions;
-//			} else {
-//				finalRequestOptions = _.defaults({}, customRequestOptions, this.requestOptions);
-//			}
-
-//			return (axios.get<TRecievePayload>(endpoint, finalRequestOptions) as any as Promise<Axios.AxiosXHR<TRecievePayload>>)
-//				.then((result) => {
-//					return Promise.resolve(result);
-//				}, (err: Axios.AxiosXHR<TRecievePayload>) => {
-//					//log.info(err);
-//					if (err.status === 0 && err.statusText === "" && err.data === "" as any) {
-//						//log.debug("EzEndpointFunction axios.get timeout.", { endpoint });
-//						err.status = 524;
-//						err.statusText = "A Timeout Occurred";
-//						err.data = "Axios->EzEndpointFunction timeout." as any;
-//					}
-//					if (this.preRetryIntercept != null) {
-//						let interceptResult = this.preRetryIntercept(err);
-//						if (interceptResult != null) {
-//							let stopError = new PromiseRetry.StopError("preRetryIntercept abort");
-//							(stopError as any)["interceptResult"] = interceptResult;
-//							return Promise.reject(stopError);
-//						}
-//					}
-//					return Promise.reject(err);
-//				});
-//		}, this.retryOptions).catch((err: any) => {
-//			if (err.interceptResult != null) {
-//				return err.interceptResult;
-//			}
-//			//og.error("failed ez call .get()", this.toJson(), err);
-//			return Promise.reject(err);
-//		});
-//	}
-
-//}

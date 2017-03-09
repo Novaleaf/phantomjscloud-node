@@ -72,18 +72,18 @@ export interface IBrowserApiOptions {
 		/** if specified, maximum amount that interval can increase to*/
 		max_interval?: number;
 	},
-/** allow customizing the local autoscaler.  For advanced optimization only! we do NOT recommend doing this, as it can cause most of your requests to fail with 429 (too many simultaneous requests) errors.   */
-	autoscale?:utils.AutoscaleConsumerOptions;
+	/** allow customizing the local autoscaler.  For advanced optimization only! we do NOT recommend doing this, as it can cause most of your requests to fail with 429 (too many simultaneous requests) errors.   */
+	autoscale?: Partial<utils.IAutoscaleConsumerOptions>;
 }
 /**
  *  the defaults used if options are not passed to a new BrowserApi object.
  */
 export let defaultBrowserApiOptions: IBrowserApiOptions = {
-	endpointOrigin: "http://PhantomJsCloud.com",
+	//endpointOrigin: "http://local.PhantomJsCloud.com:23082",
+	endpointOrigin: "https://api.PhantomJsCloud.com",
 	apiKey: "a-demo-key-with-low-quota-per-ip-address",
-	suppressDemoKeyWarning: false,	
+	suppressDemoKeyWarning: false,
 }
-
 
 
 /** internal use: the user's request and it's options */
@@ -120,7 +120,7 @@ export class BrowserApi {
 		}
 		//this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({origin:this.options.endpointOrigin, path});
 
-		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker.bind(this),this.options.autoscale);
+		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker.bind(this), this.options.autoscale);
 	}
 
 	private _autoscaler: utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>;
@@ -304,28 +304,34 @@ namespace _test {
 				const fs = require("fs");
 				const svg_sample_979_17470485_content: string = fs.readFileSync(__dirname + "/../tests/svg-sample-979_17470485.html", { encoding: "utf8" });
 
-				let test = it("svg gen sample 979_17470485", () => {
-					const basicPageRequest: ioDatatypes.IPageRequest = {
-						url: "https://www.example.com",
-						renderType: "plainText",
-					};
-					let testRequest_complexSvgSmallPng: ioDatatypes.IPageRequest = {
-						"url": "",
-						"content": svg_sample_979_17470485_content,
-						"renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
-					}
 
+				const warmupRequest: ioDatatypes.IPageRequest = {
+					url: "",
+					content: "<html>hi</html>",
+					"renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
+				};
+				let testRequest: ioDatatypes.IPageRequest = {
+					"url": "",
+					"content": svg_sample_979_17470485_content,
+					"renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
+				}
+
+				function testPass(testName: string, passName: string, browserApi: BrowserApi): PromiseLike<any> {
 					//warm up request
-					const startBasic = __.utcNowTimestamp();
-					return browserApi.requestSingle(basicPageRequest)
+					const warmupStart = __.utcNowTimestamp();
+					//return browserApi.requestSingle(testRequest_complexSvgSmallPng)
+					return browserApi.requestSingle(warmupRequest)
 						.then(() => {
-							const endBasic = __.utcNowTimestamp();
-							log.warn("basicElapsed...", endBasic - startBasic);
-							const startTest = __.utcNowTimestamp();
-							return browserApi.requestSingle(testRequest_complexSvgSmallPng)
+							const warmupEnd = __.utcNowTimestamp();
+							const warmupElapsedMs = warmupEnd - warmupStart;
+							//log.warn("warmup request elapsedms=", endBasic - startBasic);
+							const testStart = __.utcNowTimestamp();
+							return browserApi.requestSingle(testRequest)
+								//return browserApi.requestSingle(basicPageRequest)
 								.then((pjscResponse) => {
-									const endTest = __.utcNowTimestamp();
-									log.warn("testElapsed1", { elapsedMs: endTest - startTest, statusCode: pjscResponse.statusCode });
+									const testEnd = __.utcNowTimestamp();
+									const testElapsedMs = testEnd - testStart;
+									log.warn(testName, { passName, warmupElapsedMs, testElapsedMs, statusCode: pjscResponse.statusCode });
 									return Promise.resolve();
 									// if (pjscResponse.content.data.indexOf("example") >= 0) {
 									// 	return Promise.resolve();
@@ -333,11 +339,59 @@ namespace _test {
 									// return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse }));
 								});
 						})
+				}
 
+				let test = it("svg gen sample 979_17470485_SEQUENTIAL", () => {
+
+					let testName = "SEQUENTIAL";
+					const browserApi = new BrowserApi();
+					return testPass(testName, "0", browserApi)
+						.then(() => {
+							return testPass(testName, "1", browserApi);
+						})
+						.then(() => {
+							return testPass(testName, "2", browserApi);
+						})
+						.then(() => {
+							return testPass(testName, "3", browserApi);
+						})
+						.then(() => {
+							return testPass(testName, "4", browserApi);
+						})
+						.then(() => {
+							return testPass(testName, "5", browserApi);
+						})
+						.then(() => {
+							return testPass(testName, "6", browserApi);
+						})
 
 				});
-				test.timeout(10000);
+				test.timeout(20000);
 
+				test = it("svg gen sample 979_17470485_PARALLEL", () => {
+					let testName = "PARALLEL";
+					const browserApi = new BrowserApi();
+					const allPasses = [];
+					for (let i = 0; i < 7; i++) {
+						allPasses.push(testPass(testName, i.toString(), browserApi));
+					}
+					return Promise.all(allPasses);
+				});
+				test.timeout(20000);
+
+				test = it("svg gen sample 979_17470485_PARALLEL_OLD", () => {
+
+					let testName = "PARALLEL_OLD";
+
+					const browserApi = new BrowserApi({ autoscale: { workerMin: 2 } });
+					const allPasses = [];
+					for (let i = 0; i < 7; i++) {
+						allPasses.push(testPass(testName, i.toString(), browserApi));
+					}
+					return Promise.all(allPasses);
+
+				});
+				test.timeout(20000);
 			});
 		});
 
