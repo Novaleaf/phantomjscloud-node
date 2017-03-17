@@ -221,38 +221,41 @@ var _test;
             describe("perf tests", function () {
                 var fs = require("fs");
                 var svg_sample_979_17470485_content = fs.readFileSync(__dirname + "/../tests/svg-sample-979_17470485.html", { encoding: "utf8" });
-                var warmupRequest = {
-                    url: "",
-                    content: "<html>hi</html>",
-                    "renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
-                };
+                // const warmupRequest: ioDatatypes.IPageRequest = {
+                // 	url: "",
+                // 	content: "<html>hi</html>",
+                // 	"renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
+                // };
                 var testRequest = {
                     "url": "",
                     "content": svg_sample_979_17470485_content,
                     "renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
                 };
                 function testPass(testName, passName, browserApi) {
-                    //warm up request
-                    var warmupStart = __.utcNowTimestamp();
-                    //return browserApi.requestSingle(testRequest_complexSvgSmallPng)
-                    return browserApi.requestSingle(warmupRequest)
-                        .then(function () {
-                        var warmupEnd = __.utcNowTimestamp();
-                        var warmupElapsedMs = warmupEnd - warmupStart;
-                        //log.warn("warmup request elapsedms=", endBasic - startBasic);
-                        var testStart = __.utcNowTimestamp();
-                        return browserApi.requestSingle(testRequest)
-                            .then(function (pjscResponse) {
-                            var testEnd = __.utcNowTimestamp();
-                            var testElapsedMs = testEnd - testStart;
-                            log.warn(testName, { passName: passName, warmupElapsedMs: warmupElapsedMs, testElapsedMs: testElapsedMs, statusCode: pjscResponse.statusCode });
-                            return Promise.resolve();
-                            // if (pjscResponse.content.data.indexOf("example") >= 0) {
-                            // 	return Promise.resolve();
-                            // }
-                            // return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse }));
-                        });
+                    // //warm up request
+                    // const warmupStart = __.utcNowTimestamp();
+                    // //return browserApi.requestSingle(testRequest_complexSvgSmallPng)
+                    // return browserApi.requestSingle(warmupRequest)
+                    // 	.then(() => {
+                    // 		const warmupEnd = __.utcNowTimestamp();
+                    // 		const warmupElapsedMs = warmupEnd - warmupStart;
+                    // 		//log.warn("warmup request elapsedms=", endBasic - startBasic);
+                    var testStart = __.utcNowTimestamp();
+                    return browserApi.requestSingle(testRequest)
+                        .then(function (pjscResponse) {
+                        var testEnd = __.utcNowTimestamp();
+                        var testElapsedMs = testEnd - testStart;
+                        log.warn(testName, { passName: passName,
+                            //warmupElapsedMs, 
+                            testElapsedMs: testElapsedMs,
+                            statusCode: pjscResponse.statusCode });
+                        return Promise.resolve();
+                        // if (pjscResponse.content.data.indexOf("example") >= 0) {
+                        // 	return Promise.resolve();
+                        // }
+                        // return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse }));
                     });
+                    // })
                 }
                 var test = it("svg gen sample 979_17470485_SEQUENTIAL", function () {
                     var testName = "SEQUENTIAL";
@@ -275,6 +278,15 @@ var _test;
                     })
                         .then(function () {
                         return testPass(testName, "6", browserApi);
+                    })
+                        .then(function () {
+                        return testPass(testName, "7", browserApi);
+                    })
+                        .then(function () {
+                        return testPass(testName, "8", browserApi);
+                    })
+                        .then(function () {
+                        return testPass(testName, "9", browserApi);
                     });
                 });
                 test.timeout(20000);
@@ -282,22 +294,22 @@ var _test;
                     var testName = "PARALLEL";
                     var browserApi = new BrowserApi();
                     var allPasses = [];
-                    for (var i = 0; i < 7; i++) {
+                    for (var i = 0; i < 8; i++) {
                         allPasses.push(testPass(testName, i.toString(), browserApi));
                     }
                     return Promise.all(allPasses);
                 });
                 test.timeout(20000);
-                test = it("svg gen sample 979_17470485_PARALLEL_OLD", function () {
-                    var testName = "PARALLEL_OLD";
-                    var browserApi = new BrowserApi({ autoscale: { workerMin: 2 } });
-                    var allPasses = [];
-                    for (var i = 0; i < 7; i++) {
-                        allPasses.push(testPass(testName, i.toString(), browserApi));
-                    }
-                    return Promise.all(allPasses);
-                });
-                test.timeout(20000);
+                // test = it("svg gen sample 979_17470485_PARALLEL_OLD", () => {
+                // 	let testName = "PARALLEL_OLD";
+                // 	const browserApi = new BrowserApi({ autoscale: { workerMin: 2 } });
+                // 	const allPasses = [];
+                // 	for (let i = 0; i < 8; i++) {
+                // 		allPasses.push(testPass(testName, i.toString(), browserApi));
+                // 	}
+                // 	return Promise.all(allPasses);
+                // });
+                // test.timeout(20000);
             });
         });
         describe("fail cases", function () {
