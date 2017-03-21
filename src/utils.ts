@@ -66,6 +66,12 @@ interface IPendingTask<TInput, TOutput> {
 export class AutoscaleConsumer<TInput, TOutput>{
 
 	public options: IAutoscaleConsumerOptions;
+
+	private _pendingTasks: IPendingTask<TInput, TOutput>[] = [];
+	private _workerCount: number = 0;
+	private _workerLastAddTime: Date = new Date(0);
+	private __autoTrySpawnHandle: NodeJS.Timer | null;
+
 	constructor(
 		/** The "WorkerThread", this function processes work. it's execution is automatically managed by this object. */
 		private _workProcessor: (input: TInput) => PromiseLike<TOutput>,
@@ -75,7 +81,6 @@ export class AutoscaleConsumer<TInput, TOutput>{
 		this.options = _.defaults(_options, autoscaleConsumerOptionsDefaults);
 	}
 
-	private _pendingTasks: IPendingTask<TInput, TOutput>[] = [];
 
 
 	public process(input: TInput): Promise<TOutput> {
@@ -86,10 +91,11 @@ export class AutoscaleConsumer<TInput, TOutput>{
 		this._trySpawnWorker();
 		return toReturn;
 	}
+	/** inform that the autoscaler should stall growing.  we do this by resetting the linearGrowth timer. */
+	public stall() {
+		this._workerLastAddTime = new Date();
+	}
 
-
-	private _workerCount: number = 0;
-	private _workerLastAddTime: Date = new Date(0);
 
 
 	private _trySpawnWorker() {
@@ -130,7 +136,6 @@ export class AutoscaleConsumer<TInput, TOutput>{
 			}, 100);
 		}
 	}
-	private __autoTrySpawnHandle: NodeJS.Timer | null;
 
 	/**
 	 *  recursively loops itself

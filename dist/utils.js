@@ -52,6 +52,10 @@ var AutoscaleConsumer = (function () {
         this._trySpawnWorker();
         return toReturn;
     };
+    /** inform that the autoscaler should stall growing.  we do this by resetting the linearGrowth timer. */
+    AutoscaleConsumer.prototype.stall = function () {
+        this._workerLastAddTime = new Date();
+    };
     AutoscaleConsumer.prototype._trySpawnWorker = function () {
         var _this = this;
         //debugLog("AutoscaleConsumer._tryStartProcessing called");

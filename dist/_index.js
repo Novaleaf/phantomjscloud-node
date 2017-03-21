@@ -67,8 +67,49 @@ exports.defaultBrowserApiOptions = {
 var BrowserApi = (function () {
     function BrowserApi(keyOrOptions) {
         if (keyOrOptions === void 0) { keyOrOptions = {}; }
+        var _this = this;
         this._endpointPath = "/api/browser/v2/";
-        this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint({}, { timeout: 66000, max_tries: 3, interval: 1000 }, { timeout: 65000 });
+        this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint({}, { timeout: 66000, max_tries: 3, interval: 1000 }, { timeout: 65000 }, 
+        //if the API request fails, this function figures out if we should retry the request or report the failure to the user.
+        function (err) {
+            if (err.response == null) {
+                //no response so retry normally
+                return Promise.resolve();
+            }
+            //custom workflow for known phantomjscloud error levels
+            switch (err.response.status) {
+                ///////////// FAIL
+                case 400: //bad request
+                case 401: //unauthorized
+                case 402: //payment required
+                case 403: //forbidden
+                case 424: {
+                    //user needs to modify their request
+                    return Promise.reject(err);
+                }
+                ///////////////  RETRY
+                case 503: //server to busy
+                case 429: {
+                    //stall our thread increase time
+                    _this._autoscaler.stall();
+                    //ok to retry normally
+                    return Promise.resolve();
+                }
+                case 500: //internal server error
+                case 502: {
+                    //ok to retry normally
+                    return Promise.resolve();
+                }
+            }
+            //standard workflow
+            if (err.response.status >= 500) {
+                //ok to retry normally
+                return Promise.resolve();
+            }
+            else {
+                return Promise.reject(err);
+            }
+        });
         if (typeof keyOrOptions === "string") {
             this.options = { apiKey: keyOrOptions };
         }

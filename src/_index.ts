@@ -101,7 +101,51 @@ export class BrowserApi {
 
 	private _endpointPath = "/api/browser/v2/";
 
-	private _browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({}, { timeout: 66000, max_tries: 3, interval: 1000 }, { timeout: 65000 });
+	private _browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>(
+		{}, 
+		{ timeout: 66000, max_tries: 3, interval: 1000 }, 
+		{ timeout: 65000 },
+		//if the API request fails, this function figures out if we should retry the request or report the failure to the user.
+		(err)=>{
+			if(err.response==null){
+				//no response so retry normally
+				return Promise.resolve();
+			}
+			//custom workflow for known phantomjscloud error levels
+			switch(err.response.status){
+				///////////// FAIL
+				case 400: //bad request
+				case 401: //unauthorized
+				case 402: //payment required
+				case 403: //forbidden
+				case 424:{ //failed dependency
+					//user needs to modify their request
+					return Promise.reject(err);
+				}				
+				///////////////  RETRY
+				case 503: //server to busy
+				case 429:{ //too many simulatneous requests
+					//stall our thread increase time
+					this._autoscaler.stall();
+					//ok to retry normally
+					return Promise.resolve();
+				}
+				case 500: //internal server error
+				case 502:{ //bad gateway
+					//ok to retry normally
+					return Promise.resolve();
+				}				
+			}
+			//standard workflow
+			if(err.response.status>=500){				
+					//ok to retry normally
+					return Promise.resolve();
+			}else{
+				return Promise.reject(err);
+			}
+		}
+		);
+
 
 	public options: IBrowserApiOptions;
 

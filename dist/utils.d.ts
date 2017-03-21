@@ -25,15 +25,17 @@ export declare class AutoscaleConsumer<TInput, TOutput> {
     /** The "WorkerThread", this function processes work. it's execution is automatically managed by this object. */
     private _workProcessor;
     options: IAutoscaleConsumerOptions;
+    private _pendingTasks;
+    private _workerCount;
+    private _workerLastAddTime;
+    private __autoTrySpawnHandle;
     constructor(
         /** The "WorkerThread", this function processes work. it's execution is automatically managed by this object. */
         _workProcessor: (input: TInput) => PromiseLike<TOutput>, _options?: Partial<IAutoscaleConsumerOptions>);
-    private _pendingTasks;
     process(input: TInput): Promise<TOutput>;
-    private _workerCount;
-    private _workerLastAddTime;
+    /** inform that the autoscaler should stall growing.  we do this by resetting the linearGrowth timer. */
+    stall(): void;
     private _trySpawnWorker();
-    private __autoTrySpawnHandle;
     /**
      *  recursively loops itself
      * @param idleMs
