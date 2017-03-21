@@ -8,7 +8,7 @@ function pageRequestDefaultsGet() {
             operation: "GET",
             encoding: "utf8",
             headers: {},
-            data: undefined
+            data: null
         },
         renderType: "jpg",
         outputAsJson: false,
@@ -51,6 +51,15 @@ function pageRequestDefaultsGet() {
             viewport: { height: 1280, width: 1280 },
             zoomFactor: 1.0,
             passThroughHeaders: false,
+            pngOptions: {
+                optimize: false,
+                colors: 256,
+                noDither: false,
+                //posterize: undefined,
+                qualityMax: 80,
+                qualityMin: 0,
+                speed: 8,
+            }
         },
         scripts: {
             domReady: [],

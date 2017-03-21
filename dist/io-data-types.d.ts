@@ -176,7 +176,7 @@ export interface IPageRequest {
     "pdf": renders page as a pdf,
     "script": returns the contents of ```window['_pjscMeta'].scriptOutput```.   see the [scripts](#_io_datatypes_.pagerequest.scripts)  parameter for more details,
     "plainText": return the text without html tags (page plain text),*/
-    renderType?: "html" | "jpeg" | "jpg" | "png" | "pdf" | "script" | "plainText";
+    renderType?: string;
     /** TRUE to return the page conents and metadata as a JSON object.  see [IUserResponse](#_io_datatypes_.iuserresponse)
      * if FALSE, we return the rendered content in it's native form.
      */
@@ -235,8 +235,13 @@ export interface IResourceModifier {
     isBlacklisted?: boolean;
     /** changes the current URL of the network request. This is an excellent and only way to provide alternative implementation of a remote resource.
      * you can even use a dataURI so that you can set the contents directly, Example: ```data:,Hello%2C%20World!```
+     * additionally, you can use special marker tokens to replace parts of the changeUrl with the original resource url.  the special marker tokens are ```$$port``` ```$$protocol```` ```$$host``` ```$$path```.  For example ```changeUrl="$$protocol://example.com$$path"```
+     * also, you can use the ```changeCaptureRegex``` parameter to provide custom marker tokens.
      */
     changeUrl?: string;
+    /** special pattern matching regex.  capture groups can replace parts of the ```changeUrl``` that use the special marker tokens ```$$0```, ```$$1```, etc on to ```$$9``` .
+    for example: if ```resourceUrl="http://google.com/somescript.js"``` ```changeCaptureRegex="^.*?/(.*)$"``` would create a match group for everything after the last ```/``` character and ```changeUrl="http://example.com/$$1"``` would then get evaluated to  ```"http://example.com/somescript.js"``` */
+    changeCaptureRegex?: string;
     /** optional key/value pairs for adjusting the headers of this resource's request.  example: ```{"Accept-encoding":"gzip", "hello":"world"}```*/
     setHeader?: {
         [key: string]: string;
@@ -251,7 +256,7 @@ export interface IClipRectangleOptions {
 }
 /** when a page is rendered, use these settings.  */
 export interface IRenderSettings {
-    /** jpeg quality.  0 to 100.  default 70.  ignored for png */
+    /** jpeg quality.  0 to 100.  default 70.  ignored for png, use pngOptions to set png quality. */
     quality?: number;
     /** pdf specific settings.  Example:
     ``` {
@@ -268,6 +273,8 @@ export interface IRenderSettings {
         width: "8.5in", 	}
     ``` */
     pdfOptions?: IPdfOptions;
+    /** optional png quality options passed to PngQuant.  you must set pngOptions.optimize=true to enable these, otherwise the original non-modified png is returned.    */
+    pngOptions?: IPngOptions;
     /** size of the browser in pixels*/
     viewport?: {
         width: number;
@@ -283,6 +290,21 @@ export interface IRenderSettings {
     renderIFrame?: string;
     /** default false.   If true, we will pass through all headers received from the target URL, with the exception of "Content-Type" (unless the renderType=```html```)*/
     passThroughHeaders?: boolean;
+}
+/** optional png quality options passed to PngQuant.  you must set pngOptions.optimize=true to enable these, otherwise the original non-modified png is returned.    */
+export interface IPngOptions {
+    /** default false, which is to return the original png.   if you pass true, we will optimize the png using PngQuant.  smaller file size but takes longer to process */
+    optimize?: boolean;
+    /** default 0.  If conversion results in quality below the min quality the image won't be compressed */
+    qualityMin?: number;
+    /** 1 to 100.  default 80.  Instructs pngquant to use the least amount of colors required to meet or exceed the max quality. */
+    qualityMax?: number;
+    /** 2 to 256.  default 256.    */
+    colors?: number;
+    /** default 8.   (very fast).  value can rage between 1 (slow) and 11 (fast and rough) */
+    speed?: number;
+    /** default false.  true to disable dithering */
+    noDither?: boolean;
 }
 /** options for specifying headers or footers in a pdf render.  */
 export interface IPdfHeaderFooter {
