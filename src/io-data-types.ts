@@ -48,6 +48,25 @@ export interface IPdfOptions {
     dpi?: number;
 }
 
+
+/** options specific to rendering pngs.  */
+export interface IPngOptions
+{
+    /** whether to run the output through pngquant - a library for lossy compression of PNG images.  Default is false. */
+    optimize?: boolean;
+    /** speed/quality trade-off from 1 (brute-force) to 10 (fastest). The default is 3. Speed 10 has 5% lower quality, but is 8 times faster than the default. */
+    speed?: number;
+    /** disable Floyd-Steinberg dithering */
+    noDither?: boolean;
+    /** the number of colors used in the output image (up to 256) */
+    colors?: number;
+    /** if conversion results in quality below the min quality the image won't be saved */
+    qualityMin?: number;
+    /** instructs pngquant to use the least amount of colors required to meet or exceed the max quality */
+    qualityMax?: number;
+}
+
+
 /**Various methods in the phantom object, as well as in WebPage instances, utilize phantom.cookies objects. These are best created via object literals. */
 export interface ICookie {
     name: string;
@@ -391,6 +410,8 @@ export interface IRenderSettings {
 		width: "8.5in", 	} 
 	``` */
     pdfOptions?: IPdfOptions;
+    /** png specific settings.*/
+    pngOptions?: IPngOptions;
     /** size of the browser in pixels*/
     viewport?: {
         width: number;
