@@ -12,6 +12,7 @@ This library provides a simple and high quality mechanism for interacting with [
 
 ## Platforms
 - This works in Node.js and Browsers (via Browserify or Webpack).
+- Also tested to work using node via **Amazon Lambda** and **Google Cloud Functions**.
 	
 
 
