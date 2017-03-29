@@ -473,7 +473,11 @@ export interface IUserRequest {
 	 * Additionally, When you use proxy servers, be aware that requests will be slower, so consider increasing the ```pageRequest.resourceTimeout``` parameter like the Proxy Example does.
 	 */
 	proxy?: boolean | IProxyOptions;
-
+	/** optional, specify an alternate backend instead of the default phantomjs process.  the default value if not specified is ```default```.  
+	options are: ```default```: the current stable backend.  (phantomjs v2.1.1).   ```beta```: the latest backend we are testing (phantomjs v2.5b).  You can also specify an exact backend: ```phantom 2.1.1``` or ```phantom 2.5beta```. */
+	backend?: string;
+	/** setting this forces the value of the outputAsJson parameter, regardless of what the last page's value of outputAsJson was set to.  default is undefined.*/
+	outputAsJson?: boolean;
 }
 /** allows specifying a proxy for your ```userRequest``` (all the pageRequests it contains)  To use the built-in proxy servers, you must set the ```geolocation``` parameter.  
  *  Alternatively, you may use your own custom proxy server by setting the ```custom``` parameter. */

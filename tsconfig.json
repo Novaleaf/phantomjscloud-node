@@ -26,8 +26,17 @@
     "noImplicitThis": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "strictNullChecks": true
+    "strictNullChecks": true,
     
+    //"types": ["node","mocha"],
+    //workaround for npm linking projects and associated dupe identifier bugs: https://github.com/Microsoft/TypeScript/issues/9566#issuecomment-287633339
+    "baseUrl": "./",
+    "paths": {
+      "*": [
+        "node_modules/@types/*",
+        "*"
+      ]
+    }
   },
   "include": [
     "src/**/*"

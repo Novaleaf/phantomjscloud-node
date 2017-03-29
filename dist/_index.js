@@ -286,10 +286,12 @@ var _test;
                         .then(function (pjscResponse) {
                         var testEnd = __.utcNowTimestamp();
                         var testElapsedMs = testEnd - testStart;
-                        log.warn(testName, { passName: passName,
+                        log.warn(testName, {
+                            passName: passName,
                             //warmupElapsedMs, 
                             testElapsedMs: testElapsedMs,
-                            statusCode: pjscResponse.statusCode });
+                            statusCode: pjscResponse.statusCode
+                        });
                         return Promise.resolve();
                         // if (pjscResponse.content.data.indexOf("example") >= 0) {
                         // 	return Promise.resolve();
