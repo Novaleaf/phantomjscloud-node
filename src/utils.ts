@@ -1,7 +1,7 @@
 ﻿
 import refs = require("./refs");
 import xlib = refs.xlib;
-import Promise = xlib.promise.bluebird;
+//import Promise = xlib.promise.bluebird;
 import _ = xlib.lodash;
 
 
@@ -83,9 +83,9 @@ export class AutoscaleConsumer<TInput, TOutput>{
 
 
 
-	public process(input: TInput): Promise<TOutput> {
+	public process(input: TInput): PromiseLike<TOutput> { // Promise<TOutput> {
 
-		let toReturn = new Promise<TOutput>((resolve, reject) => {
+		let toReturn = new xlib.promise.bluebird<TOutput>((resolve, reject) => {
 			this._pendingTasks.push({ input, resolve, reject });
 		});
 		this._trySpawnWorker();
@@ -162,7 +162,7 @@ export class AutoscaleConsumer<TInput, TOutput>{
 			throw log.error("pending task is non existant", { work, pendingCount: this._pendingTasks.length });
 		}
 
-		Promise.try(() => {
+		xlib.promise.bluebird.try(() => {
 			log.debug("AUTOSCALECONSUMER._workerLoop() starting request processing (workProcessor) concurrent=" + this._workerCount);
 			return this._workProcessor(work.input);
 		}).then((output) => {

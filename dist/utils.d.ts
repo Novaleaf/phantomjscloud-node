@@ -1,7 +1,3 @@
-/// <reference types="bluebird" />
-import refs = require("./refs");
-import xlib = refs.xlib;
-import Promise = xlib.promise.bluebird;
 /**
  * options for the AutoscaleConsumer
  */
@@ -32,7 +28,7 @@ export declare class AutoscaleConsumer<TInput, TOutput> {
     constructor(
         /** The "WorkerThread", this function processes work. it's execution is automatically managed by this object. */
         _workProcessor: (input: TInput) => PromiseLike<TOutput>, _options?: Partial<IAutoscaleConsumerOptions>);
-    process(input: TInput): Promise<TOutput>;
+    process(input: TInput): PromiseLike<TOutput>;
     /** inform that the autoscaler should stall growing.  we do this by resetting the linearGrowth timer. */
     stall(): void;
     private _trySpawnWorker();

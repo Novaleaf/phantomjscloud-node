@@ -15,6 +15,7 @@ global._xlibConfigDefaults = __assign({}, {
     isTest: "FALSE",
     isDev: "FALSE",
     sourceMapSupport: true,
+    startupMessageSuppress: true,
 }, global._xlibConfigDefaults);
 exports.xlib = require("xlib");
 //# sourceMappingURL=refs.js.map

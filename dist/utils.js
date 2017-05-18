@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var refs = require("./refs");
 var xlib = refs.xlib;
-var Promise = xlib.promise.bluebird;
+//import Promise = xlib.promise.bluebird;
 var _ = xlib.lodash;
 //export function debugLog(...args: any[]): void {
 //	if (isDebug !== true) {
@@ -46,7 +46,7 @@ var AutoscaleConsumer = (function () {
     }
     AutoscaleConsumer.prototype.process = function (input) {
         var _this = this;
-        var toReturn = new Promise(function (resolve, reject) {
+        var toReturn = new xlib.promise.bluebird(function (resolve, reject) {
             _this._pendingTasks.push({ input: input, resolve: resolve, reject: reject });
         });
         this._trySpawnWorker();
@@ -114,7 +114,7 @@ var AutoscaleConsumer = (function () {
         if (work == null) {
             throw log.error("pending task is non existant", { work: work, pendingCount: this._pendingTasks.length });
         }
-        Promise.try(function () {
+        xlib.promise.bluebird.try(function () {
             log.debug("AUTOSCALECONSUMER._workerLoop() starting request processing (workProcessor) concurrent=" + _this._workerCount);
             return _this._workProcessor(work.input);
         }).then(function (output) {
