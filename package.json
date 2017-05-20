@@ -22,8 +22,8 @@
     "name": "Jason Swearingen",
     "email": "jasons@novaleaf.com"
   },
-  "main": "./dist/_index.js",
-  "types": "./dist/_index.d.ts",
+  "main": "./src/_index.js",
+  "types": "./src/_index.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/Novaleaf/phantomjscloud-node"
@@ -32,10 +32,9 @@
     "test": "mocha ./dist/**/*.js --watch"
   },
   "dependencies": {
-    "xlib": "^8.0.0"
+    "xlib": "^9.0.0"
   },
   "devDependencies": {
-    "@types/mocha": "^2.2.33",
     "mocha": "^3.2.0"
   }
 }

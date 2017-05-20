@@ -1,5 +1,4 @@
-﻿
-import refs = require("./refs");
+﻿import refs = require("./refs");
 import xlib = refs.xlib;
 import Promise = xlib.promise.bluebird;
 import _ = xlib.lodash;
