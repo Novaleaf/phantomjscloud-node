@@ -7,46 +7,56 @@
     "sourceMap": true,
     "inlineSources": false,
     "inlineSourceMap": false,
-    //"declaration": true,
+    "declaration": false,
     "jsx": "react",
     "newLine": "LF",
     "pretty": true,
     "stripInternal": true,
-    "diagnostics": true,
-    "target": "es5",
+    "diagnostics": false,
+    "target": "es6",
     "watch": false,
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
-
-
-    //"outDir": "./dist",
-    //"rootDir": "./src",
-
-    "noImplicitReturns": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": false,
+    "noImplicitReturns": false, /////////  change for vNext
+    "noImplicitAny": false, /////////  change for vNext
+    "noImplicitThis": false, /////////  change for vNext
+    "noUnusedLocals": false, /////////  change for vNext
     "noUnusedParameters": false,
-    "strictNullChecks": true,
-    //"types": ["bluebird"],
-    //"types": ["node","mocha"],
-    //workaround for npm linking projects and associated dupe identifier bugs: https://github.com/Microsoft/TypeScript/issues/9566#issuecomment-287633339
-    "baseUrl": "./",
-
-    "paths": {
-      "*": [
-        "node_modules/@types/*",
-        "*",
-        "custom-dts/*"
-      ]
-    }
+    "strictNullChecks": false, /////////  change for vNext
+    "suppressExcessPropertyErrors": true, /////////  change for vNext
+    "suppressImplicitAnyIndexErrors": true, /////////  change for vNext
+    "noStrictGenericChecks": true, /////////  change for vNext
+    "skipLibCheck": true,
+    "alwaysStrict": true,
+    "allowJs": false,
+    "allowSyntheticDefaultImports": false,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": true,
+    //"baseUrl": null,
+    //"charset": null,
+    "checkJs": false,
+    "composite": false, /////////  change for vNext
+    "downlevelIteration": true,
+    "emitBOM": false,
+    "emitDeclarationOnly": false,
+    "disableSizeLimit": false,
+    "emitDecoratorMetadata": false, /////////  change for vNext
+    "esModuleInterop": false, /////////  change for vNext
+    "experimentalDecorators": false, /////////  change for vNext
+    "importHelpers": false, /////////  change for vNext
+    "keyofStringsOnly": true,
+    "noErrorTruncation": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": false, /////////  change for vNext    
   },
-  "include": [
-    "src/**/*"
-  ],
   "exclude": [
     "node_modules",
+    "node_modules/**/*",
+    "**/node_modules",
+    "dist",
     "src/graveyard",
     "typings"
-  ]
+  ],
 }
