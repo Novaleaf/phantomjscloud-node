@@ -1,25 +1,24 @@
-﻿import refs = require("./refs");
-import xlib = refs.xlib;
-import Promise = xlib.promise.bluebird;
+﻿import refs = require( "./refs" );
+import xlib = refs.xlib
 import _ = xlib.lodash;
 import __ = xlib.lolo;
 
 
-let log = new xlib.logging.Logger(__filename);
+let log = new xlib.logging.Logger( __filename );
 
 
 //import Promise = refs.Promise;
 //import PromiseRetry = refs.PromiseRetry;
 
 
-export import ioDatatypes = require("./io-data-types");
+export import ioDatatypes = require( "./io-data-types" );
 
 
 
 /**
  *  helper utils used by the phantomjscloud api.  
  */
-import utils = require("./utils");
+import utils = require( "./utils" );
 
 //export function setDebug(isDebug: boolean) {
 //    utils.isDebug = isDebug;
@@ -35,8 +34,8 @@ export class PhantomJsCloudException extends Error {
  * errors thrown by the BrowserApi derive from this
  */
 export class PhantomJsCloudBrowserApiException extends PhantomJsCloudException {
-	constructor(message: string, public statusCode: number, public payload: any, public headers: { [key: string]: string }) {
-		super(message);
+	constructor( message: string, public statusCode: number, public payload: any, public headers: { [ key: string ]: string } ) {
+		super( message );
 	}
 }
 
@@ -106,13 +105,13 @@ export class BrowserApi {
 		{ timeout: 66000, max_tries: 3, interval: 1000 },
 		{ timeout: 65000 },
 		//if the API request fails, this function figures out if we should retry the request or report the failure to the user.
-		(err) => {
-			if (err.response == null) {
+		async ( err ) => {
+			if ( err.response == null ) {
 				//no response so retry normally
-				return Promise.resolve();
+				return;
 			}
 			//custom workflow for known phantomjscloud error levels
-			switch (err.response.status) {
+			switch ( err.response.status ) {
 				///////////// FAIL
 				case 400: //bad request
 				case 401: //unauthorized
@@ -120,7 +119,7 @@ export class BrowserApi {
 				case 403: //forbidden
 				case 424: { //failed dependency
 					//user needs to modify their request
-					return Promise.reject(err);
+					throw err;
 				}
 				///////////////  RETRY
 				case 503: //server to busy
@@ -128,20 +127,20 @@ export class BrowserApi {
 					//stall our thread increase time
 					this._autoscaler.stall();
 					//ok to retry normally
-					return Promise.resolve();
+					return ;
 				}
 				case 500: //internal server error
 				case 502: { //bad gateway
 					//ok to retry normally
-					return Promise.resolve();
+					return ;
 				}
 			}
 			//standard workflow
-			if (err.response.status >= 500) {
+			if ( err.response.status >= 500 ) {
 				//ok to retry normally
-				return Promise.resolve();
+				return ;
 			} else {
-				return Promise.reject(err);
+				throw err;
 			}
 		}
 	);
@@ -149,22 +148,22 @@ export class BrowserApi {
 
 	public options: IBrowserApiOptions;
 
-	constructor(/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/ apiKey?: string);
-	constructor(options?: IBrowserApiOptions);
-	constructor(keyOrOptions: string | IBrowserApiOptions = {} as any) {
-		if (typeof keyOrOptions === "string") {
+	constructor(/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/ apiKey?: string );
+	constructor( options?: IBrowserApiOptions );
+	constructor( keyOrOptions: string | IBrowserApiOptions = {} as any ) {
+		if ( typeof keyOrOptions === "string" ) {
 			this.options = { apiKey: keyOrOptions };
 		} else {
 			this.options = keyOrOptions;
 		}
-		_.defaults(this.options, defaultBrowserApiOptions);
+		_.defaults( this.options, defaultBrowserApiOptions );
 
-		if (this.options.apiKey === defaultBrowserApiOptions.apiKey && this.options.suppressDemoKeyWarning !== true) {
-			console.warn("\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n");
+		if ( this.options.apiKey === defaultBrowserApiOptions.apiKey && this.options.suppressDemoKeyWarning !== true ) {
+			console.warn( "\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n" );
 		}
 		//this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({origin:this.options.endpointOrigin, path});
 
-		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>(this._task_worker.bind(this), this.options.autoscale);
+		this._autoscaler = new utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>( this._task_worker.bind( this ), this.options.autoscale );
 	}
 
 	private _autoscaler: utils.AutoscaleConsumer<IBrowserApiTask, ioDatatypes.IUserResponse>;
@@ -173,11 +172,11 @@ export class BrowserApi {
 	 * the autoscaler worker function
 	 * @param task
 	 */
-	private _task_worker(task: IBrowserApiTask): PromiseLike<ioDatatypes.IUserResponse> {
+	private _task_worker( task: IBrowserApiTask ): PromiseLike<ioDatatypes.IUserResponse> {
 
-		return Promise.try(() => {
-			log.debug("_task_worker START");
-			_.defaults(task.customOptions, this.options);
+		return Promise.try( () => {
+			log.debug( "_task_worker START" );
+			_.defaults( task.customOptions, this.options );
 
 			/**
 			 *  path including apiKey
@@ -189,164 +188,166 @@ export class BrowserApi {
 
 
 
-			return this._browserV2RequestezEndpoint.post(task.userRequest, task.customOptions.requestOptions, task.customOptions.retryOptions, { origin: task.customOptions.endpointOrigin, path: finalPath })
+			return this._browserV2RequestezEndpoint.post( task.userRequest, task.customOptions.requestOptions, task.customOptions.retryOptions, { origin: task.customOptions.endpointOrigin, path: finalPath } )
 				//return this._browserV2RequestezEndpoint.post(task.userRequest, undefined, task.customOptions.endpointOrigin, finalPath)
-				.then((httpResponse) => {
+				.then( ( httpResponse ) => {
 					//log.warn("_task_worker httpResponse", httpResponse.data);
 
-					return Promise.resolve(httpResponse.data);
+					return Promise.resolve( httpResponse.data );
 
-				}, (err) => {
+				}, ( err ) => {
 
 					//log.warn("_task_worker errResponse", err);
 
 					//let errResponse: Axios.AxiosXHR<ioDatatypes.IUserResponse> = err.innerData
-					return Promise.reject(err);
+					return Promise.reject( err );
 					//let statusCode = errResponse.status;
 					//let ex = new PhantomJsCloudBrowserApiException("error processing request, see .payload for details.  statusCode=" + statusCode, statusCode, errResponse.data, errResponse.headers as any);
 					//return Promise.reject(ex);
-				}).finally(() => {
-					log.debug("_task_worker FINISH");
-				});
-		});
+				} ).finally( () => {
+					log.debug( "_task_worker FINISH" );
+				} );
+		} );
 	}
 	/**
 	 * make a single browser request (PhantomJs call)
 	 * @param request
 	 * @param callback
 	 */
-	public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, callback?: (err: Error, result: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
-	public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: (err?: Error, result?: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse>;
-	public requestSingle(request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: (err?: Error, result?: ioDatatypes.IUserResponse) => void): PromiseLike<ioDatatypes.IUserResponse> {
+	public async requestSingle( request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, callback?: ( err: Error, result: ioDatatypes.IUserResponse ) => void ): PromiseLike<ioDatatypes.IUserResponse>;
+	public async requestSingle( request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, customOptions?: IBrowserApiOptions, callback?: ( err?: Error, result?: ioDatatypes.IUserResponse ) => void ): PromiseLike<ioDatatypes.IUserResponse>;
+	async requestSingle( request: ioDatatypes.IUserRequest | ioDatatypes.IPageRequest, callbackOrOptions?: any, callback?: ( err?: Error, result?: ioDatatypes.IUserResponse ) => void ): PromiseLike<ioDatatypes.IUserResponse> {
 
-		return Promise.try(() => {
-			log.debug("requestSingle");
+		let customOptions: IBrowserApiOptions = callbackOrOptions as any;
 
-			if (callback == null && customOptions != null) {
-				//handle function overload
-				if (typeof customOptions == "function") {
-					callback = customOptions as any;
-					customOptions = undefined;
-				}
-			}
-			if (customOptions == null) {
+
+		//	return Promise.try(() => {
+		log.debug( "requestSingle" );
+
+		if ( callback == null && callbackOrOptions != null ) {
+			//handle function overload
+			if ( typeof callbackOrOptions == "function" ) {
+				callback = callbackOrOptions as any;
 				customOptions = {};
 			}
+		}
+		if ( callbackOrOptions == null ) {
+			customOptions = {};
+		}
 
-			//convert the request into a userRequest object, if it was a pageRequest
-			let _request = request as any;
-			let userRequest: ioDatatypes.IUserRequest;
-			if (_request.pages != null && _.isArray(_request.pages)) {
-				userRequest = _request;
-			} else {
-				userRequest = { pages: [_request] };
+		//convert the request into a userRequest object, if it was a pageRequest
+		let _request = request as any;
+		let userRequest: ioDatatypes.IUserRequest;
+		if ( _request.pages != null && _.isArray( _request.pages ) ) {
+			userRequest = _request;
+		} else {
+			userRequest = { pages: [ _request ] };
+		}
+		//set outputAsJson
+		_.forEach( userRequest.pages, ( page ) => {
+			page.outputAsJson = true;
+		} );
+
+
+		let task: IBrowserApiTask = {
+			userRequest,
+			customOptions
+		};
+		try {
+			let result = await this._autoscaler.process( task );
+			if ( callback != null ) {
+				callback( undefined, result );
 			}
-			//set outputAsJson
-			_.forEach(userRequest.pages, (page) => {
-				page.outputAsJson = true;
-			});
-
-
-			let task: IBrowserApiTask = {
-				userRequest,
-				customOptions
-			};
-
-			return this._autoscaler.process(task)
-				.then((result) => {
-					if (callback != null) {
-						callback(undefined, result);
-					}
-					return Promise.resolve(result);
-				}, (err) => {
-					if (callback != null) {
-						callback(err, undefined);
-					}
-					return Promise.reject(err);
-				});
-
-		});
+			return result;
+		} catch ( err ) {
+			if ( callback != null ) {
+				callback( err, undefined );
+			} else{
+				throw err;
+			}
+		}
 	}
+}
 
 	/**
 	 * make more than 1 browser request (PhantomJs call).  These are executed in parallel and is already optimized for PhantomJs Cloud auto-scaling, (The more your requests, the faster they will process.)
 	 * @param requests
 	 * @param callback
 	 */
-	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], callback?: (err: Error, item: { request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest); result: ioDatatypes.IUserResponse }) => void): PromiseLike<ioDatatypes.IUserResponse>[];
-	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions?: IBrowserApiOptions, callback?: (err?: Error, item?: { request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest); result?: ioDatatypes.IUserResponse }) => void): PromiseLike<ioDatatypes.IUserResponse>[];
-	public requestBatch(requests: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest)[], customOptions?: IBrowserApiOptions, callback?: (err?: Error, item?: { request: (ioDatatypes.IUserRequest | ioDatatypes.IPageRequest); result?: ioDatatypes.IUserResponse }) => void): PromiseLike<ioDatatypes.IUserResponse>[] {
+	public requestBatch( requests: ( ioDatatypes.IUserRequest | ioDatatypes.IPageRequest )[], callback ?: ( err: Error, item: { request: ( ioDatatypes.IUserRequest | ioDatatypes.IPageRequest ); result: ioDatatypes.IUserResponse } ) => void): PromiseLike < ioDatatypes.IUserResponse > [];
+	public requestBatch( requests: ( ioDatatypes.IUserRequest | ioDatatypes.IPageRequest )[], customOptions ?: IBrowserApiOptions, callback ?: ( err?: Error, item?: { request: ( ioDatatypes.IUserRequest | ioDatatypes.IPageRequest ); result?: ioDatatypes.IUserResponse } ) => void): PromiseLike < ioDatatypes.IUserResponse > [];
+	public requestBatch( requests: ( ioDatatypes.IUserRequest | ioDatatypes.IPageRequest )[], customOptions ?: IBrowserApiOptions, callback ?: ( err?: Error, item?: { request: ( ioDatatypes.IUserRequest | ioDatatypes.IPageRequest ); result?: ioDatatypes.IUserResponse } ) => void): PromiseLike < ioDatatypes.IUserResponse > [] {
 
-		if (callback == null && customOptions != null) {
-			//handle function overload
-			if (typeof customOptions == "function") {
-				callback = customOptions as any;
-				customOptions = undefined;
-			}
+	if ( callback == null && customOptions != null ) {
+		//handle function overload
+		if ( typeof customOptions == "function" ) {
+			callback = customOptions as any;
+			customOptions = undefined;
 		}
-
-		let responsePromises: PromiseLike<ioDatatypes.IUserResponse>[] = [];
-		if (callback != null) {
-			let _cb: typeof callback = callback;
-			_.forEach(requests, (request) => {
-				responsePromises.push(this.requestSingle(request, customOptions, (err, result) => { _cb(err, { request, result: result }); }));
-			});
-		} else {
-			_.forEach(requests, (request) => {
-				responsePromises.push(this.requestSingle(request, customOptions));
-			});
-		}
-
-		//if (callback != null) {
-		//	Promise.all(responsePromises)
-		//		.then((results) => {
-		//			if (callback != null) {
-		//				callback(null, results);
-		//			}
-		//			return Promise.resolve(results);
-		//		}, (err) => {
-		//			if (callback != null) {
-		//				callback(err, null);
-		//			}
-		//			return Promise.reject(err);
-		//		});
-		//}
-
-		return responsePromises;
 	}
+
+	let responsePromises: PromiseLike<ioDatatypes.IUserResponse>[] = [];
+	if ( callback != null ) {
+		let _cb: typeof callback = callback;
+		_.forEach( requests, ( request ) => {
+			responsePromises.push( this.requestSingle( request, customOptions, ( err, result ) => { _cb( err, { request, result: result } ); } ) );
+		} );
+	} else {
+		_.forEach( requests, ( request ) => {
+			responsePromises.push( this.requestSingle( request, customOptions ) );
+		} );
+	}
+
+	//if (callback != null) {
+	//	Promise.all(responsePromises)
+	//		.then((results) => {
+	//			if (callback != null) {
+	//				callback(null, results);
+	//			}
+	//			return Promise.resolve(results);
+	//		}, (err) => {
+	//			if (callback != null) {
+	//				callback(err, null);
+	//			}
+	//			return Promise.reject(err);
+	//		});
+	//}
+
+	return responsePromises;
+}
 }
 
 
 namespace _test {
 
-	describe(__filename, () => {
+	describe( __filename, () => {
 
 		let browserApi = new BrowserApi();
 		//let browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
 
-		describe("success cases", () => {
-			describe("basic browserApi functionality", () => {
+		describe( "success cases", () => {
+			describe( "basic browserApi functionality", () => {
 
-				it("plainText example.com", () => {
+				it( "plainText example.com", () => {
 					let pageRequest: ioDatatypes.IPageRequest = {
 						url: "https://www.example.com",
 						renderType: "plainText",
 					};
-					return browserApi.requestSingle(pageRequest)
-						.then((pjscResponse) => {
-							if (pjscResponse.content.data.indexOf("example") >= 0) {
+					return browserApi.requestSingle( pageRequest )
+						.then( ( pjscResponse ) => {
+							if ( pjscResponse.content.data.indexOf( "example" ) >= 0 ) {
 								return Promise.resolve();
 							}
-							return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse }));
-						})
+							return Promise.reject( log.error( "example.com content should contain the word 'example'", { pjscResponse } ) );
+						} )
 
-				});
+				} );
 
-			});
-			describe("perf tests", () => {
+			} );
+			describe( "perf tests", () => {
 
-				const fs = require("fs");
-				const svg_sample_979_17470485_content: string = fs.readFileSync(__dirname + "/../tests/svg-sample-979_17470485.html", { encoding: "utf8" });
+				const fs = require( "fs" );
+				const svg_sample_979_17470485_content: string = fs.readFileSync( __dirname + "/../tests/svg-sample-979_17470485.html", { encoding: "utf8" } );
 
 
 				// const warmupRequest: ioDatatypes.IPageRequest = {
@@ -360,7 +361,7 @@ namespace _test {
 					"renderType": "png", "renderSettings": { "quality": 75, "viewport": { "width": 624, "height": 420 }, "clipRectangle": { "top": 0, "left": 0, "width": 624, "height": 420 }, "zoomFactor": 1 }, "requestSettings": { "waitInterval": 0 }, "outputAsJson": true
 				}
 
-				function testPass(testName: string, passName: string, browserApi: BrowserApi): PromiseLike<any> {
+				function testPass( testName: string, passName: string, browserApi: BrowserApi ): PromiseLike<any> {
 					// //warm up request
 					// const warmupStart = __.utcNowTimestamp();
 					// //return browserApi.requestSingle(testRequest_complexSvgSmallPng)
@@ -370,72 +371,72 @@ namespace _test {
 					// 		const warmupElapsedMs = warmupEnd - warmupStart;
 					// 		//log.warn("warmup request elapsedms=", endBasic - startBasic);
 					const testStart = __.utcNowTimestamp();
-					return browserApi.requestSingle(testRequest)
+					return browserApi.requestSingle( testRequest )
 						//return browserApi.requestSingle(basicPageRequest)
-						.then((pjscResponse) => {
+						.then( ( pjscResponse ) => {
 							const testEnd = __.utcNowTimestamp();
 							const testElapsedMs = testEnd - testStart;
-							log.warn(testName, {
+							log.warn( testName, {
 								passName,
 								//warmupElapsedMs, 
 								testElapsedMs,
 								statusCode: pjscResponse.statusCode
-							});
+							} );
 							return Promise.resolve();
 							// if (pjscResponse.content.data.indexOf("example") >= 0) {
 							// 	return Promise.resolve();
 							// }
 							// return Promise.reject(log.error("example.com content should contain the word 'example'", { pjscResponse }));
-						});
+						} );
 					// })
 				}
 
-				let test = it("svg gen sample 979_17470485_SEQUENTIAL", () => {
+				let test = it( "svg gen sample 979_17470485_SEQUENTIAL", () => {
 
 					let testName = "SEQUENTIAL";
 					const browserApi = new BrowserApi();
-					return testPass(testName, "0", browserApi)
-						.then(() => {
-							return testPass(testName, "1", browserApi);
-						})
-						.then(() => {
-							return testPass(testName, "2", browserApi);
-						})
-						.then(() => {
-							return testPass(testName, "3", browserApi);
-						})
-						.then(() => {
-							return testPass(testName, "4", browserApi);
-						})
-						.then(() => {
-							return testPass(testName, "5", browserApi);
-						})
-						.then(() => {
-							return testPass(testName, "6", browserApi);
-						})
-						.then(() => {
-							return testPass(testName, "7", browserApi);
-						})
-						.then(() => {
-							return testPass(testName, "8", browserApi);
-						})
-						.then(() => {
-							return testPass(testName, "9", browserApi);
-						})
+					return testPass( testName, "0", browserApi )
+						.then( () => {
+							return testPass( testName, "1", browserApi );
+						} )
+						.then( () => {
+							return testPass( testName, "2", browserApi );
+						} )
+						.then( () => {
+							return testPass( testName, "3", browserApi );
+						} )
+						.then( () => {
+							return testPass( testName, "4", browserApi );
+						} )
+						.then( () => {
+							return testPass( testName, "5", browserApi );
+						} )
+						.then( () => {
+							return testPass( testName, "6", browserApi );
+						} )
+						.then( () => {
+							return testPass( testName, "7", browserApi );
+						} )
+						.then( () => {
+							return testPass( testName, "8", browserApi );
+						} )
+						.then( () => {
+							return testPass( testName, "9", browserApi );
+						} )
 
-				});
-				test.timeout(20000);
+				} );
+				test.timeout( 20000 );
 
-				test = it("svg gen sample 979_17470485_PARALLEL", () => {
+				test = it( "svg gen sample 979_17470485_PARALLEL", () => {
 					let testName = "PARALLEL";
 					const browserApi = new BrowserApi();
 					const allPasses = [];
-					for (let i = 0; i < 8; i++) {
-						allPasses.push(testPass(testName, i.toString(), browserApi));
+					for ( let i = 0; i < 8; i++ ) {
+						allPasses.push( testPass( testName, i.toString(), browserApi ) );
 					}
-					return Promise.all(allPasses);
-				});
-				test.timeout(20000);
+					return Promise.all( allPasses );
+				} );
+				test.timeout( 20000 );
 
 				// test = it("svg gen sample 979_17470485_PARALLEL_OLD", () => {
 
@@ -450,32 +451,32 @@ namespace _test {
 
 				// });
 				// test.timeout(20000);
-			});
-		});
+			} );
+		} );
 
-		describe("fail cases", () => {
-			describe("network failures", () => {
+		describe( "fail cases", () => {
+			describe( "network failures", () => {
 
-				let test = it("invalid domain", () => {
+				let test = it( "invalid domain", () => {
 
 					let pageRequest: ioDatatypes.IPageRequest = {
 						url: "https://www.exadsfakjalkjghlalkjrtiuibe.com",
 						renderType: "plainText",
 					};
-					return browserApi.requestSingle(pageRequest)
-						.then((pjscResponse) => {
-							throw log.error("should have failed...", { pjscResponse });
-						}, (err) => {
-							if (err.response != null) {
+					return browserApi.requestSingle( pageRequest )
+						.then( ( pjscResponse ) => {
+							throw log.error( "should have failed...", { pjscResponse } );
+						}, ( err ) => {
+							if ( err.response != null ) {
 								const axiosErr = err as xlib.net._axiosDTs.AxiosErrorResponse<any>;
-								log.assert(axiosErr.response != null && axiosErr.response.status === 424, "expected error status 424", { axiosErr });
+								log.assert( axiosErr.response != null && axiosErr.response.status === 424, "expected error status 424", { axiosErr } );
 							}
-						});
-				});
-				test.timeout(10000);
+						} );
+				} );
+				test.timeout( 10000 );
 
-			});
-		});
-	});
+			} );
+		} );
+	} );
 
 }
