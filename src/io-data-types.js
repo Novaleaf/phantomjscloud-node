@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function pageRequestDefaultsGet() {
-    var pageRequestDefaults = {
+    let pageRequestDefaults = {
         url: undefined,
         content: undefined,
         urlSettings: {
