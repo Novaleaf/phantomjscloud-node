@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const refs = require("./refs");
-var xlib = refs.xlib;
+const xlib = require("xlib");
 //import Promise = xlib.promise.bluebird;
 var _ = xlib.lodash;
 //export function debugLog(...args: any[]): void {
@@ -15,7 +14,7 @@ var _ = xlib.lodash;
 //}
 ///**set to true to enable debug outputs */
 //export let isDebug = false;
-let log = new xlib.logging.Logger(__filename, xlib.environment.LogLevel.WARN);
+let log = new xlib.diagnostics.logging.Logger(__filename, xlib.environment.LogLevel.WARN);
 const autoscaleConsumerOptionsDefaults = {
     /** the minimum number of workers.  below this, we will instantly provision new workers for added work.  default=8 */
     workerMin: 8,

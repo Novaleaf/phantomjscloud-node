@@ -8,11 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const refs = require("./refs");
-var xlib = refs.xlib;
-var _ = xlib.lodash;
-var bb = xlib.promise.bluebird;
-let log = new xlib.diagnostics.logging.Logger(__filename);
+exports.xlib = require("xlib");
+exports.xlib.initialize({
+    envLevel: exports.xlib.environment.EnvLevel.DEV,
+    logLevel: exports.xlib.environment.LogLevel.ERROR,
+    testLevel: exports.xlib.environment.TestLevel.FULL,
+    disableEnvAutoRead: true,
+    suppressStartupMessage: true,
+});
+var _ = exports.xlib.lodash;
+var bb = exports.xlib.promise.bluebird;
+let log = new exports.xlib.diagnostics.logging.Logger(__filename);
 //let log = new xlib.diagnostics.
 //import Promise = refs.Promise;
 //import PromiseRetry = refs.PromiseRetry;
@@ -57,7 +63,7 @@ exports.defaultBrowserApiOptions = {
 class BrowserApi {
     constructor(keyOrOptions = {}) {
         this._endpointPath = "/api/browser/v2/";
-        this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint({}, { timeout: 66000, max_tries: 3, interval: 1000 }, { timeout: 65000 }, 
+        this._browserV2RequestezEndpoint = new exports.xlib.net.EzEndpoint({}, { timeout: 66000, max_tries: 3, interval: 1000 }, { timeout: 65000 }, 
         //if the API request fails, this function figures out if we should retry the request or report the failure to the user.
         (err) => __awaiter(this, void 0, void 0, function* () {
             if (err.response == null) {
@@ -106,7 +112,7 @@ class BrowserApi {
         }
         _.defaults(this.options, exports.defaultBrowserApiOptions);
         if (this.options.apiKey === exports.defaultBrowserApiOptions.apiKey && this.options.suppressDemoKeyWarning !== true) {
-            console.warn("\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n");
+            log.warn("\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n");
         }
         //this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({origin:this.options.endpointOrigin, path});
         this._autoscaler = new utils.AutoscaleConsumer(this._task_worker.bind(this), this.options.autoscale);
@@ -369,4 +375,4 @@ var _test;
         });
     });
 })(_test || (_test = {}));
-//# sourceMappingURL=_index.js.map
+//# sourceMappingURL=index.js.map

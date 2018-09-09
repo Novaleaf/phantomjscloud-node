@@ -31,7 +31,7 @@
     "suppressExcessPropertyErrors": true, /////////  change for vNext
     "suppressImplicitAnyIndexErrors": true, /////////  change for vNext
     "noStrictGenericChecks": true, /////////  change for vNext
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "alwaysStrict": true,
     "allowJs": false,
     "allowSyntheticDefaultImports": false,
@@ -58,10 +58,6 @@
   },
   "exclude": [
     "node_modules",
-    "node_modules/**/*",
-    "**/node_modules",
-    "dist",
     "src/graveyard",
-    "typings"
   ],
 }

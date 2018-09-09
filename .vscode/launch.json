@@ -1,0 +1,78 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "node",
+			"request": "launch",
+			"runtimeArgs": [
+				"--inspect",
+				//"--trace-warnings",
+			],
+			"args": [
+				"logLevel=TRACE",
+				"envLevel=DEV",
+				"testLevel=NONE",
+				"logLevelOverrides={'.*connection':'WARN', '.*xlib.dev.core.net.js':'INFO'}",
+			],
+			"name": "node-dev",
+			"runtimeExecutable": "node-dev",
+			"program": "${workspaceFolder}/src/index.js",
+			"restart": true,
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"protocol": "inspector",
+			"sourceMaps": true,
+			"skipFiles": [
+				"**/node_modules/**/*.js",
+				"**/node_modules/bluebird/**/*.js",
+				"**/node_modules/json5/**/*.js",
+				"**/node_modules/rx/**/*.js",
+				"**/node_modules/inert/**/*.js",
+				"**/node_modules/@google-cloud/**/*.js",
+				"<node_internals>/**/*.js",
+				"**/xlib/dev/core/serialization.ts", //has serialization functions that throw on parse errors
+			],
+			"showAsyncStacks": true,
+			"smartStep": true,
+			"stopOnEntry": false,
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"runtimeArgs": [
+				"--inspect",
+				//"--trace-warnings",
+			],
+			"args": [
+				"logLevel=TRACE",
+				"envLevel=DEV",
+				"testLevel=NONE",
+				"logLevelOverrides={'.*connection':'WARN', '.*xlib.dev.core.net.js':'INFO'}",
+			],
+			"name": "mocha",
+			"runtimeExecutable": "mocha",
+			"program": "${workspaceFolder}/src/index.js",
+			"restart": true,
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"protocol": "inspector",
+			"sourceMaps": true,
+			"skipFiles": [
+				"**/node_modules/**/*.js",
+				"**/node_modules/bluebird/**/*.js",
+				"**/node_modules/json5/**/*.js",
+				"**/node_modules/rx/**/*.js",
+				"**/node_modules/inert/**/*.js",
+				"**/node_modules/@google-cloud/**/*.js",
+				"<node_internals>/**/*.js",
+				"**/xlib/dev/core/serialization.ts", //has serialization functions that throw on parse errors
+			],
+			"showAsyncStacks": true,
+			"smartStep": true,
+			"stopOnEntry": false,
+		},
+	]
+}

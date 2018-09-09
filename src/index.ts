@@ -1,5 +1,12 @@
-﻿import refs = require( "./refs" );
-import xlib = refs.xlib
+﻿export import xlib = require( "xlib" );
+xlib.initialize( {
+    envLevel: xlib.environment.EnvLevel.DEV,
+    logLevel: xlib.environment.LogLevel.ERROR,
+    testLevel: xlib.environment.TestLevel.FULL,
+    disableEnvAutoRead: true, //won't read env vars from environment, which can override your passed in vars    
+    suppressStartupMessage: true,
+} );
+
 import _ = xlib.lodash;
 import __ = xlib.lolo;
 import bb = xlib.promise.bluebird;
@@ -13,8 +20,6 @@ let log = new xlib.diagnostics.logging.Logger( __filename );
 
 
 export import ioDatatypes = require( "./io-data-types" );
-
-
 
 /**
  *  helper utils used by the phantomjscloud api.  
@@ -161,7 +166,7 @@ export class BrowserApi {
         _.defaults( this.options, defaultBrowserApiOptions );
 
         if ( this.options.apiKey === defaultBrowserApiOptions.apiKey && this.options.suppressDemoKeyWarning !== true ) {
-            console.warn( "\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n" );
+            log.warn( "\n------\nWARNING: You are using a demo key for PhantomJs Cloud, and are limited to 100 Pages/Day.  Sign Up to get 500 Pages/Day free.\n------\n" );
         }
         //this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>({origin:this.options.endpointOrigin, path});
 
