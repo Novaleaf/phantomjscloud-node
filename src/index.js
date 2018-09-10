@@ -18,7 +18,7 @@ xlib.initialize({
 });
 var _ = xlib.lodash;
 var bb = xlib.promise.bluebird;
-let log = new xlib.diagnostics.logging.Logger(__filename);
+let log = new xlib.diagnostics.Logger(__filename);
 //let log = new xlib.diagnostics.
 //import Promise = refs.Promise;
 //import PromiseRetry = refs.PromiseRetry;

@@ -20,7 +20,7 @@ import _ = xlib.lodash;
 
 
 
-let log = new xlib.diagnostics.logging.Logger( __filename, xlib.environment.LogLevel.WARN );
+let log = new xlib.diagnostics.Logger( __filename, xlib.environment.LogLevel.WARN );
 
 
 /**
