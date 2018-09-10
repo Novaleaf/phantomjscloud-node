@@ -8,17 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.xlib = require("xlib");
-exports.xlib.initialize({
-    envLevel: exports.xlib.environment.EnvLevel.DEV,
-    logLevel: exports.xlib.environment.LogLevel.ERROR,
-    testLevel: exports.xlib.environment.TestLevel.FULL,
-    disableEnvAutoRead: true,
+const xlib = require("xlib");
+xlib.initialize({
+    envLevel: xlib.environment.EnvLevel.DEV,
+    logLevel: xlib.environment.LogLevel.ERROR,
+    testLevel: xlib.environment.TestLevel.NONE,
+    disableEnvAutoRead: false,
     suppressStartupMessage: true,
 });
-var _ = exports.xlib.lodash;
-var bb = exports.xlib.promise.bluebird;
-let log = new exports.xlib.diagnostics.logging.Logger(__filename);
+var _ = xlib.lodash;
+var bb = xlib.promise.bluebird;
+let log = new xlib.diagnostics.logging.Logger(__filename);
 //let log = new xlib.diagnostics.
 //import Promise = refs.Promise;
 //import PromiseRetry = refs.PromiseRetry;
@@ -63,7 +63,7 @@ exports.defaultBrowserApiOptions = {
 class BrowserApi {
     constructor(keyOrOptions = {}) {
         this._endpointPath = "/api/browser/v2/";
-        this._browserV2RequestezEndpoint = new exports.xlib.net.EzEndpoint({}, { timeout: 66000, max_tries: 3, interval: 1000 }, { timeout: 65000 }, 
+        this._browserV2RequestezEndpoint = new xlib.net.EzEndpoint({}, { timeout: 66000, max_tries: 3, interval: 1000 }, { timeout: 65000 }, 
         //if the API request fails, this function figures out if we should retry the request or report the failure to the user.
         (err) => __awaiter(this, void 0, void 0, function* () {
             if (err.response == null) {
@@ -238,6 +238,7 @@ exports.BrowserApi = BrowserApi;
 var _test;
 (function (_test) {
     describe(__filename, () => {
+        log.info("testing if all ok");
         let browserApi = new BrowserApi();
         //let browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
         describe("success cases", () => {

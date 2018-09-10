@@ -1,15 +1,17 @@
-﻿export import xlib = require( "xlib" );
+﻿import xlib = require( "xlib" );
 xlib.initialize( {
     envLevel: xlib.environment.EnvLevel.DEV,
     logLevel: xlib.environment.LogLevel.ERROR,
-    testLevel: xlib.environment.TestLevel.FULL,
-    disableEnvAutoRead: true, //won't read env vars from environment, which can override your passed in vars    
+    testLevel: xlib.environment.TestLevel.NONE,
+    disableEnvAutoRead: false, //won't read env vars from environment, which can override your passed in vars    
     suppressStartupMessage: true,
 } );
 
 import _ = xlib.lodash;
 import __ = xlib.lolo;
 import bb = xlib.promise.bluebird;
+
+
 
 
 let log = new xlib.diagnostics.logging.Logger( __filename );
@@ -336,6 +338,7 @@ export class BrowserApi {
 namespace _test {
 
     describe( __filename, () => {
+        log.info( "testing if all ok" );
 
         let browserApi = new BrowserApi();
         //let browserApi = new BrowserApi({ endpointOrigin: "http://api.phantomjscloud.com" });
