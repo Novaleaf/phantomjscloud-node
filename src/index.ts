@@ -49,7 +49,9 @@ export class PhantomJsCloudBrowserApiException extends PhantomJsCloudException {
 
 
 export interface IBrowserApiOptions {
-    /** the endpoint you want to point at, for example using with a private cloud.  if not set, will default to the PhantomJsCloud public api. */
+    /** the endpoint you want to point at, for example using with a private cloud.  if not set, will default to the PhantomJsCloud public api. 
+     * @default "https://api.PhantomJsCloud.com"
+    */
     endpointOrigin?: string;
 	/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   
 		* Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/

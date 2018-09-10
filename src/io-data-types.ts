@@ -321,7 +321,7 @@ export interface IRequestSettings {
  * You can pass in either the url to a script to load, or the text of the script itself.  Example: ```scripts:{domReady:["//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.js","return 'Hello, World!';"]}```
  * **OUTPUT**
  * Your scripts can return data to you in the ```pageResponse.scriptOutput``` object.  You can access this directly via ```windows._pjscMeta.scriptOutput``` or your script can simply return a value and it will be set as the ```scriptOutput``` (not available on external, url loaded scripts)
- * Also, if you use the **[[IPageRequest.renderType]]="script"** setting, your response will be the ```scriptOutput``` itself (in JSON format) which allows you to construct your own custom API.  A very powerfull feature! * 
+ * Also, if you use the **[[IPageRequest.renderType]]="script"** setting, your response will be the ```scriptOutput``` itself (in JSON format) which allows you to construct your own custom API.  A very powerful feature! * 
  */
 export interface IScripts {
 	/**
@@ -357,7 +357,7 @@ export interface IScripts {
 	// */
 	//targetUrlReceived: string[];
 }
-/** The parameters for requesting and rendering a page.  When you submit an array of IPageRequests, they are loaded in-orrder, and only the last one is rendered.  
+/** The parameters for requesting and rendering a page.  When you submit an array of IPageRequests, they are loaded in-order, and only the last one is rendered.  
  * All variables except 'url' are optional.
  */
 export interface IPageRequest {
@@ -380,7 +380,7 @@ export interface IPageRequest {
 	renderType?: string;
 	//passThroughResponseHeaders: boolean = false;
 
-	/** TRUE to return the page conents and metadata as a JSON object.  see [[IUserResponse]]
+	/** TRUE to return the page contents and metadata as a JSON object.  see [[IUserResponse]]
 	 * if FALSE, we return the rendered content in it's native form.
 	 */
 	outputAsJson?: boolean;
@@ -404,30 +404,37 @@ export interface IPageRequest {
 	 */
 	scripts?: IScripts;
 
-	/** select the backend you will use.
+	/** choose what browser renders your request
 		* 
-		* the current default (```WebKit``` ) is being replaced by ```chrome``` in the near future.
-	
-	* you may choose from the following shortcuts:  "```default```", "```preview```", "```webkit```", "```chrome```"
-
-	* ```default```:  currently ```webkit```, will change to ```chrome``` soon
-
-	* ```preview```:  currently ```chrome```. may change at any time as this is for testing new backends or feature enhancements. 
-
-	* ```WebKit```:  the latest stabke version of the default PhantomJs rendering engine:  ```phantomjs 2.1.1``` 
-
-	* ```chrome```:  the latest stable version of chrome, (currently our ```preview``` version is acting as a placeholder)
-	
-	* or choose a specific backend:  ```phantomjs 2.1.1```, ```phantomjs 2.5beta```
-
-	* @default "default"
-	* */
-	backend?: "default" | "chrome" | "webkit" | "preview" | "phantomjs 2.1.1" | "phantomjs 2.5beta";
+* @default "default"
+	 */
+	backend?: IBackendType;
 
 	/** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```)..  extra settings if you use injected ```scripts```. */
 	scriptSettings?: IScriptSettings;
 
 }
+
+/** select the browser engine you will use
+	* 	
+* you may choose from the following shortcuts:  "```default```", "```preview```", "```webkit```", "```chrome```"
+
+* ```default```:  currently ```webkit pjs2.1.1```, will change to ```chrome v68``` soon
+
+* ```preview```:  currently ```chrome v68```. may change at any time as this is for testing new backends or feature enhancements. 
+
+* ```webkit```:  the latest stabke version of the default PhantomJs rendering engine:  ```webkit pjs2.1.1``` 
+
+* ```chrome```:  the latest stable version of chrome, (currently ```chrome v68```)
+	
+* or choose a specific backend: ```chrome v68```, ```webkit pjs2.1.1```, ```webkit pjs2.5beta```
+
+* */
+export type IBackendType = "default" | "chrome" | "webkit" | "preview" | "chrome v68" | "webkit pjs2.1.1" | "webkit pjs2.5beta";
+
+
+/** all [[IBackendType]] choices are converted into one of these internally */
+export type IDiscreteBackendType = "webkit pjs2.1.1" | "webkit pjs2.5beta" | "chrome v68";
 
 export interface IScriptSettings {
 	/** if true and your script errors, processing will abort.   default false. */
@@ -452,7 +459,7 @@ export function pageRequestDefaultsGet(): IPageRequest {
 		requestSettings: {
 			ignoreImages: false,
 			disableJavascript: false,
-			userAgent: "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.34 (KHTML, like Gecko) Safari/534.34 PhantomJS/2.0.0 (PhantomJsCloud.com/2.0.1)", //using Safari v534.34 due to increased WebFont compatability. see: https://github.com/ariya/phantomjs/issues/12682#issuecomment-68453670
+			userAgent: "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.34 (KHTML, like Gecko) Safari/534.34 PhantomJS/2.0.0 (PhantomJsCloud.com/2.0.1)", //using Safari v534.34 due to increased WebFont compatibility. see: https://github.com/ariya/phantomjs/issues/12682#issuecomment-68453670
 			authentication: undefined,//{ userName: "guest", password: "guest" },
 			xssAuditingEnabled: false,
 			webSecurityEnabled: false,
@@ -543,7 +550,7 @@ export interface IScriptPjscMeta {
 }
 
 
-/** regex + adjustment parametes for modifying or rejecting resources being loaded by the webpage.    Example:  ```{regex:".*css.*",isBlacklisted:true}```  */
+/** regex + adjustment parameters for modifying or rejecting resources being loaded by the webpage.    Example:  ```{regex:".*css.*",isBlacklisted:true}```  */
 export interface IResourceModifier {
 
 	/** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
@@ -670,7 +677,7 @@ export interface IRenderSettings {
 	quality?: number;
 	/** settings useful for generating PDF's
 		* 
-	* **Note**: by default, when generating a PDF we set the **[[IRenderSettings.emulateMedia]]="screen"** property.   Consider setting [[IRenderSettings.emulateMedia]]="print" for a more print-frinedly PDF
+	* **Note**: by default, when generating a PDF we set the **[[IRenderSettings.emulateMedia]]="screen"** property.   Consider setting [[IRenderSettings.emulateMedia]]="print" for a more print-friendly PDF
 
 	@Example  
 	```json 
@@ -690,7 +697,7 @@ export interface IRenderSettings {
 		width: number;
 		/** 
 		 * by default, height is not used when taking screenshots (png/pdf).  The image will be as tall as required to fit the content.  
-		 * To customize your screenshot's dimensions, use the [[IRenderSettings.clipRectangle]] property.  */
+		 * To customize your screenshot dimensions, use the [[IRenderSettings.clipRectangle]] property.  */
 		height: number;
 		/** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
 		 * if set, the meta viewport tag is used
@@ -719,7 +726,7 @@ export interface IRenderSettings {
 
 	/** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).		
 		* 
-	* as an alternative to ```clipRectangle``` you meay pass a CSS selector.	
+	* as an alternative to ```clipRectangle``` you may pass a CSS selector.	
 	* such as "h1", and the bounding rectangle of that element will be used.  
 
 	* CSS selectors are like JQuery.  For help, please see https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors 
@@ -728,7 +735,7 @@ export interface IRenderSettings {
 
 	* For image rendering (jpeg/png) You may also send the send the special "_viewport" selector
 
-	* note: selector takes precident over any clipRectangle settings.
+	* note: selector takes precidence over any clipRectangle settings.
 	*/
 	selector?: string;
 
@@ -827,26 +834,12 @@ export interface IUserRequest {
 	//  * Additionally, When you use proxy servers, be aware that requests will be slower, so consider increasing the [[IRequestSettings.resourceTimeout]] parameter like the Proxy Example does.
 	//  */
 	// proxy?: boolean | IProxyOptions;
-
-	/** select the backend you will use.
-		* 
-		* the current default (```WebKit``` ) is being replaced by ```chrome``` in the near future.
-	
-	* you may choose from the following shortcuts:  "```default```", "```preview```", "```webkit```", "```chrome```"
-
-	* ```default```:  currently ```webkit```, will change to ```chrome``` soon
-
-	* ```preview```:  currently ```chrome```. may change at any time as this is for testing new backends or feature enhancements. 
-
-	* ```WebKit```:  the latest stabke version of the default PhantomJs rendering engine:  ```phantomjs 2.1.1``` 
-
-	* ```chrome```:  the latest stable version of chrome, (currently our ```preview``` version is acting as a placeholder)
-	
-	* or choose a specific backend:  ```phantomjs 2.1.1```, ```phantomjs 2.5beta```
-
-	* @default "default"
-	* */
-	backend?: "default" | "chrome" | "webkit" | "preview" | "phantomjs 2.1.1" | "phantomjs 2.5beta";
+	/** choose what browser renders your request 
+		* @default "default"
+	*/
+	backend?: IBackendType;
+	/** @hidden, the explicit browser engine we will use to process the request */
+	backendDiscrete?: IDiscreteBackendType;
 
 	/** setting this forces the value of the outputAsJson parameter, regardless of what the last page's value of outputAsJson was set to.  default is undefined.*/
 	outputAsJson?: boolean;
