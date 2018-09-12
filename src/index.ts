@@ -2,7 +2,6 @@
 xlib.initialize( {
     envLevel: xlib.environment.EnvLevel.DEV,
     logLevel: xlib.environment.LogLevel.ERROR,
-    testLevel: xlib.environment.TestLevel.NONE,
     disableEnvAutoRead: false, //won't read env vars from environment, which can override your passed in vars    
     suppressStartupMessage: true,
 } );

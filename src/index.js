@@ -12,7 +12,6 @@ const xlib = require("xlib");
 xlib.initialize({
     envLevel: xlib.environment.EnvLevel.DEV,
     logLevel: xlib.environment.LogLevel.ERROR,
-    testLevel: xlib.environment.TestLevel.NONE,
     disableEnvAutoRead: false,
     suppressStartupMessage: true,
 });
