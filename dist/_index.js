@@ -8,11 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-global.__xlibInitArgs = Object.assign({ envLevel: "DEV", logLevel: "ERROR", disableEnvAutoRead: false, silentInit: true }, global.__xlibInitArgs);
+global.__xlibInitArgs = Object.assign({ 
+    //envLevel: "DEV",
+    //logLevel: "ERROR",
+    //disableEnvAutoRead: false, //won't read env vars from environment, which can override your passed in vars    
+    silentInit: true }, global.__xlibInitArgs);
 const xlib = require("xlib");
 var _ = xlib.lodash;
 var bb = xlib.promise.bluebird;
-let log = new xlib.diagnostics.Logger(__filename);
+const log = xlib.diagnostics.log; // let log =  new xlib.diagnostics.Logger( __filename );
+log._overrideLogLevel("WARN");
 //let log = new xlib.diagnostics.
 //import Promise = refs.Promise;
 //import PromiseRetry = refs.PromiseRetry;
@@ -370,4 +375,4 @@ var _test;
         });
     });
 })(_test || (_test = {}));
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=_index.js.map

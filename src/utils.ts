@@ -20,8 +20,8 @@ import _ = xlib.lodash;
 
 
 
-let log = new xlib.diagnostics.Logger( __filename, xlib.environment.LogLevel.WARN );
-
+const log = xlib.diagnostics.log; //let log = new xlib.diagnostics.Logger( __filename, xlib.environment.LogLevel.WARN );
+log._overrideLogLevel( "WARN" );
 
 /**
  * options for the AutoscaleConsumer

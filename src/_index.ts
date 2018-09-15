@@ -1,11 +1,12 @@
-﻿import xlib = require( "xlib" );
-xlib.initialize( {
-    envLevel: xlib.environment.EnvLevel.DEV,
-    logLevel: xlib.environment.LogLevel.ERROR,
-    disableEnvAutoRead: false, //won't read env vars from environment, which can override your passed in vars    
-    suppressStartupMessage: true,
-} );
-
+﻿global.__xlibInitArgs = {
+    //envLevel: "DEV",
+    //logLevel: "ERROR",
+    //disableEnvAutoRead: false, //won't read env vars from environment, which can override your passed in vars    
+    silentInit: true,
+    //let any previously set args override these
+    ...global.__xlibInitArgs
+};
+import xlib = require( "xlib" );
 import _ = xlib.lodash;
 import __ = xlib.lolo;
 import bb = xlib.promise.bluebird;
@@ -13,7 +14,8 @@ import bb = xlib.promise.bluebird;
 
 
 
-let log = new xlib.diagnostics.Logger( __filename );
+const log = xlib.diagnostics.log;// let log =  new xlib.diagnostics.Logger( __filename );
+log._overrideLogLevel( "WARN" );
 //let log = new xlib.diagnostics.
 
 //import Promise = refs.Promise;

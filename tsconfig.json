@@ -1,3 +1,4 @@
+// * novaleaf tsconfig for inheritors of xlib v1
 {
   "compileOnSave": true,
   "references": [
@@ -12,12 +13,18 @@
     "sourceMap": true,
     "inlineSources": false,
     "inlineSourceMap": false,
-    "declaration": false,
+    "composite": true, // ! IMPORTANT this seems to screw up tsc complation, considder toggling.
+    "declaration": true,
+    "declarationMap": true,
+    "strict": false, /////////  change for vNext    
+    "noEmitOnError": false,
     "jsx": "react",
     "newLine": "LF",
     "pretty": true,
     "stripInternal": true,
-    "diagnostics": false,
+    //"diagnostics": true, // verbose debug output of tsc build
+    //"listFiles": true, // verbose debug output of tsc build
+    //"listEmittedFiles": true, // verbose debug output of tsc build
     "target": "es6",
     "watch": false,
     "moduleResolution": "node",
@@ -40,7 +47,6 @@
     //"baseUrl": null,
     //"charset": null,
     "checkJs": false,
-    "composite": false, /////////  change for vNext
     "downlevelIteration": true,
     "emitBOM": false,
     "emitDeclarationOnly": false,
@@ -48,16 +54,27 @@
     "emitDecoratorMetadata": false, /////////  change for vNext
     "esModuleInterop": false, /////////  change for vNext
     "experimentalDecorators": false, /////////  change for vNext
-    "importHelpers": false, /////////  change for vNext
+    "importHelpers": false, // tsc bug: even though tslib is in node_modules, tsc only sees it if at root level (not in a submodule)
     "keyofStringsOnly": true,
     "noErrorTruncation": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "strictFunctionTypes": true,
-    "strictPropertyInitialization": false, /////////  change for vNext    
+    "strictPropertyInitialization": false, /////////  change for vNext   
+    "outDir": "dist",
+    "rootDir": "src",
   },
+  // "typeAcquisition": { //not enabling to force explicit usage of new types
+  //   "enable": true,
+  // },
+  // "include": [
+  //   "./src/**/*.ts",
+  //   "./src/_internal/**/*.ts",
+  // ],
   "exclude": [
     "node_modules",
-    "src/graveyard",
-  ],
+    "src/_graveyard",
+    "src/_to_refactor",
+    "dist",
+  ]
 }
