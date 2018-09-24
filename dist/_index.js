@@ -65,7 +65,7 @@ class BrowserApi {
             endpointOptions: {
                 retryOptions: { timeout: 66000, max_tries: 1, interval: 1000, throw_original: true },
                 requestOptions: { timeout: 65000 },
-                autoscalerOptions: { busyGrowDelayMs: 10000, busyExtraPenalty: 0, growDelayMs: 4000, idleOrBusyDecreaseMs: 3000, minParallel: 4, },
+                autoscalerOptions: { busyGrowDelayMs: 20000, busyExtraPenalty: 1, growDelayMs: 2000, idleOrBusyDecreaseMs: 3000, minParallel: 4, },
                 endpoint: {},
                 preRetryErrorIntercept: 
                 //if the API request fails, this function figures out if we should retry the request or report the failure to the user.
