@@ -21,7 +21,7 @@ import _ = xlib.lodash;
 
 
 const log = xlib.diagnostics.log; //let log = new xlib.diagnostics.Logger( __filename, xlib.environment.LogLevel.WARN );
-log._overrideLogLevel( "WARN" );
+log.overrideLogLevel( "WARN" );
 
 /**
  * options for the AutoscaleConsumer

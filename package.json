@@ -34,7 +34,7 @@
     "test": "mocha ./dist/**/*.js --watch"
   },
   "dependencies": {
-    "xlib": "^12.0.0"
+    "xlib": "^13.5.0"
   },
   "devDependencies": {}
 }
