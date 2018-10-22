@@ -46,6 +46,9 @@
 				"--watch",
 				"--colors",
 				"--trace-warnings",
+				//	"--grep",
+				//".*user scenarios.*",
+				//"chromePdfMake.*",
 			],
 			"args": [
 				"./dist/**/*.test.js",

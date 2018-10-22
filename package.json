@@ -31,9 +31,10 @@
     "url": "https://github.com/Novaleaf/phantomjscloud-node"
   },
   "scripts": {
-    "test": "mocha ./dist/**/*.js --watch"
+    "test": "mocha ./dist/**/*.test.js --watch"
   },
   "dependencies": {
+    "mocha": "^5.2.0",
     "xlib": "^14.1.0"
   },
   "devDependencies": {}

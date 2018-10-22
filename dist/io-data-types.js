@@ -49,8 +49,8 @@ function pageRequestDefaultsGet() {
             // 	width: undefined,
             // 	//dpi: 150,
             // },
-            //			clipRectangle: undefined, //{height:8000, width:8000 , top:0, left:0},
-            //			renderIFrame: undefined,
+            // 			clipRectangle: undefined, //{height:8000, width:8000 , top:0, left:0},
+            // 			renderIFrame: undefined,
             viewport: { height: 1280, width: 1280 },
             zoomFactor: 1.0,
             passThroughHeaders: false,
@@ -64,6 +64,10 @@ function pageRequestDefaultsGet() {
             domReady: [],
             loadFinished: [],
         },
+        scriptSettings: {
+            stopOnError: false,
+            async: false,
+        }
     };
     return pageRequestDefaults;
 }
