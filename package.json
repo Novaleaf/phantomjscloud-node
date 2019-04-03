@@ -10,9 +10,7 @@
     "Browser",
     "Browser Api",
     "Headless Browser",
-    "Typescript",
-    "parallel",
-    "async"
+    "Typescript"
   ],
   "homepage": "https://github.com/Novaleaf/phantomjscloud-node",
   "bugs": {
