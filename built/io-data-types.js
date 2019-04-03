@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 /**@hidden */
 function pageRequestDefaultsGet() {
-    var pageRequestDefaults = {
+    let pageRequestDefaults = {
         url: undefined,
         content: undefined,
         urlSettings: undefined,
@@ -25,6 +25,7 @@ function pageRequestDefaultsGet() {
             resourceWait: 15000,
             resourceTimeout: 35000,
             maxWait: 35000,
+            ioWait: 2000,
             waitInterval: 1000,
             stopOnError: false,
             resourceModifier: [],
@@ -34,7 +35,12 @@ function pageRequestDefaultsGet() {
             cookies: [],
             deleteCookies: []
         },
-        suppressJson: ["events.value.resourceRequest.headers", "events.value.resourceResponse.headers", "frameData.content", "frameData.childFrames"],
+        suppressJson: [
+            "events.value.resourceRequest.headers",
+            "events.value.resourceResponse.headers",
+            "frameData.content",
+            "frameData.childFrames",
+        ],
         renderSettings: {
             quality: 70,
             // pdfOptions: {

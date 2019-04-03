@@ -1,5 +1,7 @@
 /**
  * @hidden
+ *
+ * options sent to webkit via commandline.   for other options, see the local config.ts file (such as the ```tryProcessNextRequestTimeoutMs``` variable)
  */
 export interface IProcessManagerOptions {
     /** where input files are read from.
@@ -11,10 +13,6 @@ export interface IProcessManagerOptions {
      * must already exist and be empty
      */
     outputPath: string;
-    /** how often to watch the temp folder for new input files */
-    requestWatchInterval: number;
-    /** how many ms we will wait if the activeRequest is unresponsive */
-    activeRequestFrozenTimeout: number;
     isDebug: boolean;
     /**
      *  friendly identifier used for debug purposes
@@ -253,6 +251,16 @@ export interface IRequestSettings {
      * This can safely be set to 0 if you know there are no AJAX or animations you need to wait for (decreasing your billed costs)
      */
     waitInterval?: number;
+    /**  new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
+     *
+     * maximum amount of time (in ms) to wait when communicating with the browser, such as when retrieving iframes or cookies, detecting page height, etc. Default is 2000ms.  You usually will not need to change this, unless dealing with JSON output and very large/complex pages.*/
+    ioWait?: number;
+    /**  new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
+     *
+     * A regex.  If it maches a resource's response URL, we will record the response body in base64 format, stored in the output JSON under the pageResponses.events (key=response) node.
+     *
+     * For advanced use.  This is useful when you want to inspect data sent to your page, but is otherwise not rendered in the page output.*/
+    recordResourceBody?: string;
     /** if true, will stop [[IPageRequest]] load upon the first error detected, and move to next phase (render or next page) */
     stopOnError?: boolean;
     /** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
@@ -416,12 +424,17 @@ export interface IPageRequest {
     content?: string;
     /** adjustable parameters for when making network requests to the url specified */
     urlSettings?: IUrlSettings;
-    /** "html": returns the html text,
-    "jpeg"|"jpg" :  The default.  renders page as jpeg.   transparency not supported. (use ```png``` for transparency),
-    "png": renders page as png,
-    "pdf": renders page as a pdf,
-    "script": returns the contents of ```window['_pjscMeta'].scriptOutput```.   see the [[IScripts]]  parameter for more details,
-    "plainText": return the text without html tags (page plain text),*/
+    /** ```html```: returns the html text,
+         *
+        ```jpeg``` | ```jpg``` :  The default.  renders page as jpeg.   transparency not supported. (use ```png``` for transparency).  Max height/width is 20000px.  If you need bigger, let support@phantomjscloud.com know. ,
+        
+        ```png```: renders page as png.  Max default height/width is ```10000```px.  If you need bigger, set [[IRenderSettings.clipRect]] or [[IRenderSettings.selector]] directly (such as ```renderSettings.selector:"body"```). ,
+        
+        ```pdf```: renders page as a pdf,
+        
+        ```script```: returns the contents of ```window['_pjscMeta'].scriptOutput```.   see the [[IScripts]]  parameter for more details,
+        
+    ```plainText```: return the text without html tags (page plain text),*/
     renderType?: string;
     /** TRUE to return the page contents and metadata as a JSON object.  see [[IUserResponse]]
      * if FALSE, we return the rendered content in it's native form.
@@ -430,7 +443,9 @@ export interface IPageRequest {
     /** settings related to requesting internet resources (your page and resources referenced by your page) */
     requestSettings?: IRequestSettings;
     /** add the nodes from your pageResponse that you do not wish to transmit.  This reduces the size of your data, thus reducing cost and transmission time.
-     * if you need the data in these nodes, simply remove it from this array.
+     * if you need the data in these nodes, simply remove it from this array.   pass an empty array to return all nodes.
+         *
+         * @example: [ "pageResponses.events.value.request.headers", "pageResponses.events.value.response.headers", "pageResponses.frameData.content", "pageResponses.frameData.childFrames" ]
      */
     suppressJson?: string[];
     /** settings related to rendering of the last page of your request.  See the [[IRenderSettings]] documentation (below) for details*/
@@ -492,7 +507,7 @@ export interface IScriptPjscMeta {
         * Scripts can access (readonly) details about the page being loaded via ```window._pjscMeta.pageResponse```  See [[IPageResponse]] for more details. */
     pageResponse?: IPageResponse;
     /** Your scripts can return data to you in the ```pageResponse.scriptOutput``` object.  You can access this directly via ```windows._pjscMeta.scriptOutput``` or your script can simply return a value and it will be set as the ```scriptOutput``` (not available on external, url loaded scripts) */
-    scriptOutput: {};
+    scriptOutput: any;
     /** how many custom scripts have been loaded so far*/
     scriptsExecuted: number;
     /** set to false by default.  if true, will delay rendering until you set it back to false. good if you are waiting on an AJAX event. */
@@ -641,8 +656,12 @@ export interface IRenderSettings {
          * @default false
          */
         isLandscape?: boolean;
+        /** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
+         *
+         * set screen dpi scaling.  default is 1.   */
+        deviceScaleFactor?: number;
     };
-    /** This property specifies the scaling factor for the screenshot (requestType png/pdf) choices.  The default is 1, i.e. 100% zoom. */
+    /** This property specifies the scaling factor for the screenshot (requestType png/pdf) choices.  The default is 1, i.e. 100% zoom.   Use [[viewport.deviceScaleFactor]] if you need to control screen DPI */
     zoomFactor?: number;
     /** This property defines the rectangular area of the web page to be rasterized when using the requestType of png or jpeg. If no clipping rectangle is set, the entire web page is captured.
     Beware: if you capture too large an  image it can cause your request to fail (out of memory).  you can choose any dimensions you wish as long as you do not exceed 32M pixels
@@ -753,8 +772,10 @@ export interface IUserRequest {
      * */
     webSecurityEnabled?: boolean;
 }
-/** allows specifying a proxy for your [[IUserRequest]] (all the [[IPageRequest]] it contains)  To use the built-in proxy servers, you must set the ```geolocation``` parameter.
-*  Alternatively, you may use your own custom proxy server by setting the ```custom``` parameter. */
+/** allows specifying a proxy for your [[IUserRequest]] (all the [[IPageRequest]] it contains).
+*
+* Alternatively, you may use your own custom proxy server by setting the ```custom``` parameter.
+*/
 export interface IProxyOptions {
     /** allows you to use a custom proxy server.  if you set this, the built-in proxy will not be used. default=NULL */
     custom?: IProxyCustomOptions;
@@ -769,8 +790,9 @@ export interface IProxyCustomOptions {
     type?: string;
     /** if your proxy requires basic HTTP authentication information.
         *
-        * this auth pair will be sent via basic http auth (overriding [[IRequestSettings.authentication]])
-    
+                * this auth pair will be sent via basic http auth (overriding [[IRequestSettings.authentication]])
+                *
+                * **IMPORTANT**: authentication is only supported for ```http``` and ```https``` proxies.  If you are using a ```socks5``` proxy, auth is not currently supported.
         *
         @example  "username:password"
     */
@@ -809,6 +831,14 @@ export interface IUserResponse {
         };
         /** the size of data, in bytes */
         size: number;
+        /** status of the content.
+         *
+         * - ```200```: Everything good, no errors were encountered at all
+         * - ```408```: The targetURL was unable to load.
+         * - ```424```: Some errors were encountered during rendering the page.  These may be harmless script errors in the page itself, but it also may be something that could impact your rendered output.
+         * Please see [[contentErrors]] and/or [[execErrors]] for details.
+         * Additionaly, inspect other parameters for hints, such as [[resourceSummary]] and [[pageExecLastWaitedOn]]
+         */
         statusCode: number;
         /** extra response headers you want sent with your response.  set by [[IRenderSettings.extraResponseHeaders]] */
         extraHeaders?: {
@@ -832,10 +862,15 @@ export interface IUserResponse {
         }[];
         /** @hidden */
         debugDiags?: string[];
-        /** new for Chrome [[IPageRequest.backend|backend]].  information on what finished the page execution */
+        /** new for Chrome [[IPageRequest.backend|backend]].  information on what finished the page execution.
+         *
+         * If ```normal``` then most likely everything was rendered properly.  If another value, be advised your content may not have rendered properly.
+         * Inspect the value of [[statusCode]] and Please see [[contentErrors]] and/or [[execErrors]] for details on what could have occured.
+         * Additionaly, inspect other parameters for hints, such as [[resourceSummary]] and [[pageExecLastWaitedOn]]
+         */
         doneDetail?: IDoneDetail;
         /** new for Chrome [[IPageRequest.backend|backend]].  the rendered page's final eventPhase.   see [[IPageResponse.eventPhase]] for further explanation */
-        eventPhase?: IPageDomEvent;
+        eventPhase?: IPageEventPhase;
         /** new for Chrome [[IPageRequest.backend|backend]].  summary of all resources requested by the page.   see [[IPageResponse.resources]] for detailed listings */
         resourceSummary?: IResourceSummary;
     };
@@ -887,7 +922,7 @@ export interface IUserResponse {
     /** the HTTP Status Code PhantomJsCloud returns to you */
     statusCode: number;
     /** if an error was detected, we will try to supply a statusMessage to help debug.  Additionally,this will be placed as the ```pjsc-status-message``` response header. */
-    statusMessage?: string;
+    statusMessage: string;
 }
 /** Information about the [[IPageRequest]] transaction (request and it's response).   */
 export interface IPageResponse {
@@ -931,7 +966,7 @@ export interface IPageResponse {
     /**  new for Chrome [[IPageRequest.backend|backend]]. displays the last thing that the page execution subsystem was waiting on.  In addition to [[doneDetail]] and [[resources]], this is useful for debugging your requests */
     pageExecLastWaitedOn?: string;
     /**  new for Chrome [[IPageRequest.backend|backend]]. information on what event phase the page was in when it finished processing.  In addition to [[pageExecLastWaitedOn]], [[doneDetail]] and [[resources]], this is useful for debugging your requests. */
-    eventPhase?: IPageDomEvent;
+    eventPhase?: IPageEventPhase;
     /**  new for Chrome [[IPageRequest.backend|backend]]. information on what finished the page execution.  In addition to [[pageExecLastWaitedOn]], [[eventPhase]] and [[resources]], this is useful for debugging your requests. */
     doneDetail?: IDoneDetail;
     /**  new for Chrome [[IPageRequest.backend|backend]]. summary of all resources requested during the page execution, and their current status upon page completion.  see [[resources]] for detailed listings */
@@ -982,8 +1017,8 @@ export declare type IResourceSummary = {
     late: number;
 };
 /** the different event phases that a page goes through */
-export declare type IPageDomEvent = "initialRequest" | "pageNavigated" | "domReady" | "load";
-/** new for Chrome [[IPageRequest.backend|backend]].  information on what finished the page execution.  used by [[IPageResponse.doneDetail]] and [[IUserResponse.content.doneDetail]] */
+export declare type IPageEventPhase = "initialRequest" | "pageNavigated" | "domReady" | "load";
+/** new for Chrome [[IPageRequest.backend|backend]].  information on what finished the page execution.  used by [[IPageResponse.doneDetail]] and [[IUserResponse.content]].doneDetail */
 export interface IDoneDetail {
     reason: string;
     /** if set, overrides page statusCode, unless already overridden, such as when an error is encountered */

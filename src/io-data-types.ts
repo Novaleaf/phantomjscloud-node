@@ -1,7 +1,9 @@
-﻿// tslint:disable:max-line-length
+// tslint:disable:max-line-length
 
 /**
  * @hidden
+ * 
+ * options sent to webkit via commandline.   for other options, see the local config.ts file (such as the ```tryProcessNextRequestTimeoutMs``` variable)
  */
 export interface IProcessManagerOptions {
 	// host: string;
@@ -18,15 +20,17 @@ export interface IProcessManagerOptions {
 	 */
 	outputPath: string;
 
-	/** how often to watch the temp folder for new input files */
-	requestWatchInterval: number;
-	/** how many ms we will wait if the activeRequest is unresponsive */
-	activeRequestFrozenTimeout: number;
+	// /** how often to watch the temp folder for new input files */
+	// requestWatchInterval: number;
+	// /** how many ms we will wait if the activeRequest is unresponsive */
+	// activeRequestFrozenTimeout: number;
 	isDebug: boolean;
 	/**
 	 *  friendly identifier used for debug purposes
 	 */
 	id: string;
+
+
 }
 /** the new options for rendering PDF's using our Chrome [[IPageRequest.backend|backend]].  If you are using the old ```WebKit``` [[IPageRequest.backend|backend]], see ```IPdfOptions_WebKit```
 *
@@ -154,8 +158,10 @@ export interface IPdfOptions_WebKit {
 	/** optional.   ('portrait', 'landscape')  and defaults to 'portrait' */
 	orientation?: string;
 	/** settings for headers of the pdf */
+	// tslint:disable-next-line: deprecation
 	header?: IPdfHeaderFooter_WebKit;
 	/** settings for footers of the pdf */
+	// tslint:disable-next-line: deprecation
 	footer?: IPdfHeaderFooter_WebKit;
 	/** set the DPI for pdf generation.  defaults to 150, which causes each page to be 2x as large (use "fit to paper" when printing)  If you want exact, proper page dimensions, set this to 72. */
 	dpi?: number;
@@ -203,7 +209,7 @@ export interface IUrlSettings {
 	 *
 	 * if you want to set headers for every sub-resource requested, use the [[IRequestSettings.customHeaders]] parameter instead.*/
 
-	headers?: { [ key: string ]: string }; // jASON MAYBE TODO: if that doesn't work properly, can try setting the page.customHeaders in the page.onLoadStarted() event.  see http://www.developwebsites.net/faking-the-referer-header-in-phantomjs/ for more details.
+	headers?: { [ key: string ]: string; }; // jASON MAYBE TODO: if that doesn't work properly, can try setting the page.customHeaders in the page.onLoadStarted() event.  see http://www.developwebsites.net/faking-the-referer-header-in-phantomjs/ for more details.
 
 	/** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
 	 *
@@ -257,7 +263,7 @@ export interface IRequestSettings {
 	/**
 	 * username/password for simple HTTP authentication
 	 */
-	authentication?: { userName: string, password: string };
+	authentication?: { userName: string; password: string; };
 	/**
 	 *  set to true to prohibit cross-site scripting attempts (XSS).
 		 *
@@ -294,6 +300,18 @@ export interface IRequestSettings {
 	 * This can safely be set to 0 if you know there are no AJAX or animations you need to wait for (decreasing your billed costs)
 	 */
 	waitInterval?: number;
+
+	/**  new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
+	 * 
+	 * maximum amount of time (in ms) to wait when communicating with the browser, such as when retrieving iframes or cookies, detecting page height, etc. Default is 2000ms.  You usually will not need to change this, unless dealing with JSON output and very large/complex pages.*/
+	ioWait?: number;
+
+	/**  new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
+	 * 
+	 * A regex.  If it maches a resource's response URL, we will record the response body in base64 format, stored in the output JSON under the pageResponses.events (key=response) node.   
+	 * 
+	 * For advanced use.  This is useful when you want to inspect data sent to your page, but is otherwise not rendered in the page output.*/
+	recordResourceBody?: string;
 
 	/** if true, will stop [[IPageRequest]] load upon the first error detected, and move to next phase (render or next page) */
 	stopOnError?: boolean;
@@ -337,31 +355,31 @@ renderSettings:{
 		 *
 		 * **Currently buggy**
 		 */
-		event?: "load" | "domReady",
+		event?: "load" | "domReady";
 
 		/** match a [CSS Selector](https://developer.mozilla.org/en-US/docs/Learn/CSS/Introduction_to_CSS/Selectors)  */
-		selector?: string,
+		selector?: string;
 		/** match a [XPath lookup](https://developer.mozilla.org/en-US/docs/Web/XPath) */
-		xpath?: string,
+		xpath?: string;
 
 		/** if the page's plain-text contains the given string (case sensitive) */
-		text?: string,
+		text?: string;
 
 		/** if the page's plain-text matches the given [Regular Expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) */
-		textRegEx?: string,
+		textRegEx?: string;
 
 		/** if the page's html contains the given string (case sensitive) */
-		html?: string,
+		html?: string;
 
 		/** if the page's html matches the given [Regular Expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) */
-		htmlRegEx?: string,
+		htmlRegEx?: string;
 
 
 		/** specify what status code you want returned. when your criteria is met
 		 *
 		 * @default 200
 		 */
-		statusCode?: number,
+		statusCode?: number;
 
 	}>;
 
@@ -378,7 +396,7 @@ renderSettings:{
 	 * example: ```customHeaders:{"myHeader":"myValue","yourHeader":"someValue"}```
 	 * if you want to set headers for just the target page (and not every sub-request) use the [[IUrlSettings.headers]] parameter.
 	 */
-	customHeaders?: { [ key: string ]: string };
+	customHeaders?: { [ key: string ]: string; };
 	/**
 		* if true, clears cache between chained [[IPageRequest]] navigations.
 		* note: only important if multiple pages are navigated in one [[IUserRequest]].  cache is never shared between api calls.
@@ -501,12 +519,17 @@ export interface IPageRequest {
 	/** adjustable parameters for when making network requests to the url specified */
 	urlSettings?: IUrlSettings;
 
-	/** "html": returns the html text,
-	"jpeg"|"jpg" :  The default.  renders page as jpeg.   transparency not supported. (use ```png``` for transparency),
-	"png": renders page as png,
-	"pdf": renders page as a pdf,
-	"script": returns the contents of ```window['_pjscMeta'].scriptOutput```.   see the [[IScripts]]  parameter for more details,
-	"plainText": return the text without html tags (page plain text),*/
+	/** ```html```: returns the html text,
+		 * 
+		```jpeg``` | ```jpg``` :  The default.  renders page as jpeg.   transparency not supported. (use ```png``` for transparency).  Max height/width is 20000px.  If you need bigger, let support@phantomjscloud.com know. ,
+		
+		```png```: renders page as png.  Max default height/width is ```10000```px.  If you need bigger, set [[IRenderSettings.clipRect]] or [[IRenderSettings.selector]] directly (such as ```renderSettings.selector:"body"```). ,
+		
+		```pdf```: renders page as a pdf,
+		
+		```script```: returns the contents of ```window['_pjscMeta'].scriptOutput```.   see the [[IScripts]]  parameter for more details,
+		
+	```plainText```: return the text without html tags (page plain text),*/
 	renderType?: string;
 	// passThroughResponseHeaders: boolean = false;
 
@@ -520,7 +543,9 @@ export interface IPageRequest {
 
 
 	/** add the nodes from your pageResponse that you do not wish to transmit.  This reduces the size of your data, thus reducing cost and transmission time.
-	 * if you need the data in these nodes, simply remove it from this array.
+	 * if you need the data in these nodes, simply remove it from this array.   pass an empty array to return all nodes.
+		 * 
+		 * @example: [ "pageResponses.events.value.request.headers", "pageResponses.events.value.response.headers", "pageResponses.frameData.content", "pageResponses.frameData.childFrames" ]
 	 */
 	suppressJson?: string[];
 
@@ -583,7 +608,7 @@ export interface IScriptSettings {
 
 /**@hidden */
 export function pageRequestDefaultsGet(): IPageRequest {
-	var pageRequestDefaults: IPageRequest = {
+	let pageRequestDefaults: IPageRequest = {
 		url: ( undefined as any ),
 		content: undefined,
 		urlSettings: undefined,
@@ -605,6 +630,7 @@ export function pageRequestDefaultsGet(): IPageRequest {
 			resourceWait: 15000,
 			resourceTimeout: 35000,
 			maxWait: 35000,
+			ioWait: 2000,
 			waitInterval: 1000,
 			stopOnError: false,
 			resourceModifier: <IResourceModifier[]>[],
@@ -614,7 +640,16 @@ export function pageRequestDefaultsGet(): IPageRequest {
 			cookies: <ICookie[]>[],
 			deleteCookies: <string[]>[]
 		},
-		suppressJson: [ "events.value.resourceRequest.headers", "events.value.resourceResponse.headers", "frameData.content", "frameData.childFrames" ],
+		suppressJson: [
+			"events.value.resourceRequest.headers",
+			"events.value.resourceResponse.headers",
+			"frameData.content",
+			"frameData.childFrames",
+			// "pageResponses.events.value.request.headers",
+			// "pageResponses.events.value.response.headers",
+			// "pageResponses.frameData.content",
+			// "pageResponses.frameData.childFrames",
+		],
 		renderSettings: {
 			quality: 70,
 			// pdfOptions: {
@@ -677,7 +712,7 @@ export interface IScriptPjscMeta {
 		* Scripts can access (readonly) details about the page being loaded via ```window._pjscMeta.pageResponse```  See [[IPageResponse]] for more details. */
 	pageResponse?: IPageResponse;
 	/** Your scripts can return data to you in the ```pageResponse.scriptOutput``` object.  You can access this directly via ```windows._pjscMeta.scriptOutput``` or your script can simply return a value and it will be set as the ```scriptOutput``` (not available on external, url loaded scripts) */
-	scriptOutput: {};
+	scriptOutput: any;
 	/** how many custom scripts have been loaded so far*/
 	scriptsExecuted: number;
 	/** set to false by default.  if true, will delay rendering until you set it back to false. good if you are waiting on an AJAX event. */
@@ -689,6 +724,7 @@ export interface IScriptPjscMeta {
 		/** set the clipRectangle for image rendering.   here is an example you can run in your domReady or loadFinished script: ```_pjscMeta.optionsOverrides.clipRectangle = document.querySelector("h1").getBoundingClientRect();```  */
 		clipRectangle?: IClipOptions;
 	};
+
 }
 
 
@@ -767,7 +803,7 @@ export interface IResourceModifier {
 	for example: if ```resourceUrl="http://google.com/somescript.js"``` ```changeCaptureRegex="^.*?/(.*)$"``` would create a match group for everything after the last ```/``` character and ```changeUrl="http://example.com/$$1"``` would then get evaluated to  ```"http://example.com/somescript.js"``` */
 	changeCaptureRegex?: string;
 	/** optional key/value pairs for adjusting the headers of this resource's request.  example: ```{"Accept-encoding":"gzip", "hello":"world"}```*/
-	setHeader?: { [ key: string ]: string };
+	setHeader?: { [ key: string ]: string; };
 
 	/** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
 		*
@@ -779,7 +815,7 @@ export interface IResourceModifier {
 		/** sets the Content-Type response header */
 		contentType?: string;
 		/** set response headers */
-		headers?: { [ key: string ]: string };
+		headers?: { [ key: string ]: string; };
 		/** set response status code.
 			* @default 200
 		 */
@@ -856,9 +892,13 @@ export interface IRenderSettings {
 		 * @default false
 		 */
 		isLandscape?: boolean;
+		/** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
+		 * 
+		 * set screen dpi scaling.  default is 1.   */
+		deviceScaleFactor?: number;
 
 	};
-	/** This property specifies the scaling factor for the screenshot (requestType png/pdf) choices.  The default is 1, i.e. 100% zoom. */
+	/** This property specifies the scaling factor for the screenshot (requestType png/pdf) choices.  The default is 1, i.e. 100% zoom.   Use [[viewport.deviceScaleFactor]] if you need to control screen DPI */
 	zoomFactor?: number;
 
 	/** This property defines the rectangular area of the web page to be rasterized when using the requestType of png or jpeg. If no clipping rectangle is set, the entire web page is captured.
@@ -915,7 +955,7 @@ export interface IRenderSettings {
 	 * For example, to rename the file being downloaded,
 	 * you can add ```'Content-Disposition: attachment; filename="downloaded.pdf"'```
 		*/
-	extraResponseHeaders?: { [ name: string ]: string };
+	extraResponseHeaders?: { [ name: string ]: string; };
 
 	/** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
 	 * override the CSS media type of the page.
@@ -994,8 +1034,11 @@ export interface IUserRequest {
 	 * */
 	webSecurityEnabled?: boolean;
 }
-/** allows specifying a proxy for your [[IUserRequest]] (all the [[IPageRequest]] it contains)  To use the built-in proxy servers, you must set the ```geolocation``` parameter.
-*  Alternatively, you may use your own custom proxy server by setting the ```custom``` parameter. */
+
+/** allows specifying a proxy for your [[IUserRequest]] (all the [[IPageRequest]] it contains).
+* 
+* Alternatively, you may use your own custom proxy server by setting the ```custom``` parameter. 
+*/
 export interface IProxyOptions {
 
 	// /** specify the geographic region of the builtin proxy server you use.
@@ -1026,8 +1069,9 @@ export interface IProxyCustomOptions {
 	type?: string;
 	/** if your proxy requires basic HTTP authentication information.
 		*
-		* this auth pair will be sent via basic http auth (overriding [[IRequestSettings.authentication]])
-	
+				* this auth pair will be sent via basic http auth (overriding [[IRequestSettings.authentication]])
+				*
+				* **IMPORTANT**: authentication is only supported for ```http``` and ```https``` proxies.  If you are using a ```socks5``` proxy, auth is not currently supported.
 		*
 		@example  "username:password"
 	*/
@@ -1039,7 +1083,7 @@ export interface IProxyCustomOptions {
 		*
 	* @example {"Proxy-Authorization":"Basic yoursecretkey"}
 		*/
-	authHeaders?: { [ name: string ]: string };
+	authHeaders?: { [ name: string ]: string; };
 }
 
 
@@ -1063,14 +1107,24 @@ export interface IUserResponse {
 		/** utf8 or base64 */
 		encoding: string;
 		/** headers of the target url, only set if [[IRenderSettings.passThroughHeaders]]===true */
-		headers?: { [ name: string ]: string };
+		headers?: { [ name: string ]: string; };
 		// status: number;
 		// type: string;
 		/** the size of data, in bytes */
 		size: number;
+
+		/** status of the content.   
+		 * 
+		 * - ```200```: Everything good, no errors were encountered at all
+		 * - ```408```: The targetURL was unable to load.
+		 * - ```424```: Some errors were encountered during rendering the page.  These may be harmless script errors in the page itself, but it also may be something that could impact your rendered output.  
+		 * Please see [[contentErrors]] and/or [[execErrors]] for details.
+		 * Additionaly, inspect other parameters for hints, such as [[resourceSummary]] and [[pageExecLastWaitedOn]]
+		 */
 		statusCode: number;
+
 		/** extra response headers you want sent with your response.  set by [[IRenderSettings.extraResponseHeaders]] */
-		extraHeaders?: { [ name: string ]: string };
+		extraHeaders?: { [ name: string ]: string; };
 
 		/** new for Chrome [[IPageRequest.backend|backend]].  for debugging your request, if our [[IPageRequest]] didn't succeed with statusCode 200, we'll output the last thing waited on. */
 		pageExecLastWaitedOn?: string;
@@ -1094,10 +1148,15 @@ export interface IUserResponse {
 		/** @hidden */
 		debugDiags?: string[];
 
-		/** new for Chrome [[IPageRequest.backend|backend]].  information on what finished the page execution */
+		/** new for Chrome [[IPageRequest.backend|backend]].  information on what finished the page execution.  
+		 * 
+		 * If ```normal``` then most likely everything was rendered properly.  If another value, be advised your content may not have rendered properly.  
+		 * Inspect the value of [[statusCode]] and Please see [[contentErrors]] and/or [[execErrors]] for details on what could have occured.  
+		 * Additionaly, inspect other parameters for hints, such as [[resourceSummary]] and [[pageExecLastWaitedOn]]
+		 */
 		doneDetail?: IDoneDetail;
 		/** new for Chrome [[IPageRequest.backend|backend]].  the rendered page's final eventPhase.   see [[IPageResponse.eventPhase]] for further explanation */
-		eventPhase?: IPageDomEvent;
+		eventPhase?: IPageEventPhase;
 		/** new for Chrome [[IPageRequest.backend|backend]].  summary of all resources requested by the page.   see [[IPageResponse.resources]] for detailed listings */
 		resourceSummary?: IResourceSummary;
 	};
@@ -1144,14 +1203,14 @@ export interface IUserResponse {
 			/** estimation of your remaining daily creditBalance.  This is incrementally refilled hourly.*/
 			dailySubscriptionCreditsRemaining?: number;
 
-		}
+		};
 		/** debug trace information provided by the api. */
 		trace?: {
-			time: string,
+			time: string;
 			/** time since last trace call */
-			elapsedMs: number,
+			elapsedMs: number;
 			/** debug message or object */
-			data: any
+			data: any;
 		}[];
 
 		/** if true, informs our server to send back JSON, including the response plus metadata.  if False, if should send back only the content.
@@ -1163,7 +1222,7 @@ export interface IUserResponse {
 	/** the HTTP Status Code PhantomJsCloud returns to you */
 	statusCode: number;
 	/** if an error was detected, we will try to supply a statusMessage to help debug.  Additionally,this will be placed as the ```pjsc-status-message``` response header. */
-	statusMessage?: string;
+	statusMessage: string;
 }
 /** Information about the [[IPageRequest]] transaction (request and it's response).   */
 export interface IPageResponse {
@@ -1185,7 +1244,7 @@ export interface IPageResponse {
 	/**
 	 *  headers for the primary resource (the url requested).  for headers of other resources, inspect the pageResponse.events (key='resourceReceived')
 	 */
-	headers: { [ name: string ]: string };
+	headers: { [ name: string ]: string; };
 
 	/** the Frames contained in the page.   The first is always the main page itself, even if no other frames are present. */
 	frameData: IPageFrame;
@@ -1204,7 +1263,7 @@ export interface IPageResponse {
 	pageExecLastWaitedOn?: string;
 
 	/**  new for Chrome [[IPageRequest.backend|backend]]. information on what event phase the page was in when it finished processing.  In addition to [[pageExecLastWaitedOn]], [[doneDetail]] and [[resources]], this is useful for debugging your requests. */
-	eventPhase?: IPageDomEvent;
+	eventPhase?: IPageEventPhase;
 
 	/**  new for Chrome [[IPageRequest.backend|backend]]. information on what finished the page execution.  In addition to [[pageExecLastWaitedOn]], [[eventPhase]] and [[resources]], this is useful for debugging your requests. */
 	doneDetail?: IDoneDetail;
@@ -1244,23 +1303,23 @@ export interface IPageResponse {
 /**  new for Chrome [[IPageRequest.backend|backend]]. summary of all resources requested during the page execution, and their current status upon page completion. */
 export type IResourceSummary = {
 	/** successfully completed resource loads */
-	complete: number,
+	complete: number;
 	/** failed due to normal browser workflows */
-	failed: number,
+	failed: number;
 	/** aborted because the resource exceeded [[IRequestSettings.resourceTimeout]] */
-	aborted: number,
+	aborted: number;
 	/** if the browser looses track of resource request/response pairs, it will be put here (should never happen) */
-	orphaned: number,
+	orphaned: number;
 	/** requests that were still active (but healthy) upon page completion */
-	active: number,
+	active: number;
 	/** requests that were still active (but took longer than [[IRequestSettings.resourceWait]]) upon page completion */
-	late: number,
+	late: number;
 };
 
 /** the different event phases that a page goes through */
-export type IPageDomEvent = "initialRequest" | "pageNavigated" | "domReady" | "load";
+export type IPageEventPhase = "initialRequest" | "pageNavigated" | "domReady" | "load";
 
-/** new for Chrome [[IPageRequest.backend|backend]].  information on what finished the page execution.  used by [[IPageResponse.doneDetail]] and [[IUserResponse.content.doneDetail]] */
+/** new for Chrome [[IPageRequest.backend|backend]].  information on what finished the page execution.  used by [[IPageResponse.doneDetail]] and [[IUserResponse.content]].doneDetail */
 export interface IDoneDetail {
 
 	reason: string;
