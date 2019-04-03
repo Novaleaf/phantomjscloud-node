@@ -4,7 +4,7 @@
 This library provides a simple and high quality mechanism for interacting with ***Chrome***  as a scaleable cloud service.  It leverages [PhantomJsCloud.com](https://PhantomJsCloud.com) *(A Headless Browser Service)* to allow multiple calls in parallel at high performance.
 
 - [PhantomJsCloud](#phantomjscloud)
-	- [Puppeteer by default.](#puppeteer-by-default)
+	- [Chrome by default.](#chrome-by-default)
 	- [Requirements](#requirements)
 	- [Platforms](#platforms)
 	- [Basic Usage](#basic-usage)
@@ -21,9 +21,9 @@ This library provides a simple and high quality mechanism for interacting with *
 	- [Contributing](#contributing)
 		- [Building](#building)
 
-## Puppeteer by default.
+## Chrome by default.
 
-- You may also use [PhantomJs](http://PhantomJs.org) instead of [Puppeteer](https://pptr.dev) by setting the ```backend="phantomjs"``` parameter (see options, below).
+- You may also use the obsolete [PhantomJs](http://PhantomJs.org) Browser instead of the default (Chrome Latest, v74+, via Puppeteer) by setting the ```backend="phantomjs"``` parameter (see options, below).
 
 ## Requirements
 -  Internet access.  
