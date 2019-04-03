@@ -1,6 +1,6 @@
 {
   "name": "phantomjscloud",
-  "version": "3.5.2",
+  "version": "3.5.3",
   "description": "Official PhantomJs Cloud Client API Library for Node.js",
   "keywords": [
     "Chrome",
