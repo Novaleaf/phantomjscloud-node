@@ -26,14 +26,14 @@ export import ioDatatypes = require( "./io-data-types" );
 /**
 * errors thrown by this module derive from this
 */
-export class PhantomJsCloudException<TData=never> extends xlib.diagnostics.Exception<TData> {
+export class PhantomJsCloudException extends xlib.diagnostics.Exception {
 }
 
 /**
 * errors thrown by the BrowserApi derive from this
 */
-export class PhantomJsCloudBrowserApiException extends PhantomJsCloudException<{ statusCode: number, payload: any }> {
-    constructor( message: string, public statusCode: number, public payload: any, public headers: { [ key: string ]: string } ) {
+export class PhantomJsCloudBrowserApiException extends PhantomJsCloudException {
+    constructor( message: string, public statusCode: number, public payload: any, public headers: { [ key: string ]: string; } ) {
         super( message );
     }
 }
@@ -136,9 +136,7 @@ export class BrowserApi {
 
     public options: IBrowserApiOptions;
 
-    constructor(/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/ apiKey?: string );
-    constructor( options?: IBrowserApiOptions );
-    constructor( keyOrOptions: string | IBrowserApiOptions = {} as any ) {
+    constructor(/**options, or pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/  keyOrOptions: string | IBrowserApiOptions = {} as any ) {
         if ( typeof keyOrOptions === "string" ) {
             this.options = { apiKey: keyOrOptions };
         } else {
@@ -148,6 +146,7 @@ export class BrowserApi {
 
         _.defaultsDeep( this.options, this._defaultBrowserOptions );
         //set the actual endpoint to be used internally, if not set via custom options
+        // tslint:disable-next-line: no-object-literal-type-assertion
         _.defaultsDeep( this.options, {
             endpointOptions: {
                 endpoint:
@@ -240,7 +239,7 @@ export class BrowserApi {
     public requestBatch( requests: (
         ioDatatypes.IUserRequest | ioDatatypes.IPageRequest )[],
         /** note: the callback will be executed once for every request in the array submitted. */
-        callback?: ( err: Error, item: { request: ( ioDatatypes.IUserRequest | ioDatatypes.IPageRequest ); result: ioDatatypes.IUserResponse } ) => void ): Promise<ioDatatypes.IUserResponse>[] {
+        callback?: ( err: Error, item: { request: ( ioDatatypes.IUserRequest | ioDatatypes.IPageRequest ); result: ioDatatypes.IUserResponse; } ) => void ): Promise<ioDatatypes.IUserResponse>[] {
 
         let responsePromises: Promise<ioDatatypes.IUserResponse>[] = [];
         if ( callback != null ) {

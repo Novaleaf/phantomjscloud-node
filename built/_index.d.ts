@@ -4,15 +4,12 @@ export import ioDatatypes = require("./io-data-types");
 /**
 * errors thrown by this module derive from this
 */
-export declare class PhantomJsCloudException<TData = never> extends xlib.diagnostics.Exception<TData> {
+export declare class PhantomJsCloudException extends xlib.diagnostics.Exception {
 }
 /**
 * errors thrown by the BrowserApi derive from this
 */
-export declare class PhantomJsCloudBrowserApiException extends PhantomJsCloudException<{
-    statusCode: number;
-    payload: any;
-}> {
+export declare class PhantomJsCloudBrowserApiException extends PhantomJsCloudException {
     statusCode: number;
     payload: any;
     headers: {
@@ -44,8 +41,7 @@ export declare class BrowserApi {
     private _endpointPath;
     private _defaultBrowserOptions;
     options: IBrowserApiOptions;
-    constructor(/**pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/ apiKey?: string);
-    constructor(options?: IBrowserApiOptions);
+    constructor(/**options, or pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/ keyOrOptions?: string | IBrowserApiOptions);
     /** @hidden the low-level endpoint used to make the requests.  exposed for debugging support only. */
     _endpoint: xlib.net.RemoteHttpEndpoint<ioDatatypes.IUserRequest, ioDatatypes.IUserResponse>;
     /**

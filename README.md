@@ -5,8 +5,28 @@ This library provides a simple and high quality mechanism for interacting with [
 
 
 
+- [PhantomJsCloud](#phantomjscloud)
+	- [Requirements](#requirements)
+	- [Platforms](#platforms)
+	- [Basic Usage](#basic-usage)
+	- [Options](#options)
+		- [phantomJsCloud.BrowserApi()](#phantomjscloudbrowserapi)
+		- [browser.requestSingle()](#browserrequestsingle)
+		- [browser.requestBatch()](#browserrequestbatch)
+	- [Typescript Typings](#typescript-typings)
+	- [Examples](#examples)
+			- [Capture Amazon.com as a PDF](#capture-amazoncom-as-a-pdf)
+			- [All Parameters](#all-parameters)
+	- [Technical details](#technical-details)
+	- [Roadmap](#roadmap)
+	- [Contributing](#contributing)
+		- [Building](#building)
+
+
+
 ## Requirements
 -  Internet access.  
+-  Tested on Nodejs ```10.15.2```, but should work with Nodejs >= ```6.x```
 
 ***Optional***: Get an ApiKey by creating an account at [PhantomJsCloud.com](https://PhantomJsCloud.com) 
 
@@ -63,7 +83,10 @@ This library provides a simple and high quality mechanism for interacting with [
 
 ## Options
 
-### ```var browser = new phantomJsCloud.BrowserApi(apiKeyOrOptions?) : BrowserApi;```
+### phantomJsCloud.BrowserApi()
+
+```var browser = new phantomJsCloud.BrowserApi(apiKeyOrOptions?) : BrowserApi;```
+
 Constructing the browserApi, and optionally for setting default configuration options.
 
 - **```apiKeyOrOptions```**: Optional.  If set, can be either an ```apiKey:string``` 
@@ -81,7 +104,9 @@ or an ```options``` object with the parameters ```{apiKey, endpointOrigin, suppr
     - ```max_interval```  Optional.  if specified, maximum amount that interval can increase to
 - **```RETURNS```**: A ```BrowserApi``` object that is used to make the requests to the PhantomJs Cloud.
 
-### ```browser.requestSingle(request, customOptions?, callback?) : Promise<IUserResponse>```
+### browser.requestSingle() 
+```browser.requestSingle(request, customOptions?, callback?) : Promise<IUserResponse>```
+
 For making a single request.
 
 - **```request```**:  Either be a [```IPageRequest```](https://phantomjscloud.com/docs/http-api/#_io_datatypes_.ipagerequest) or [```IUserRequest```](https://phantomjscloud.com/docs/http-api/index.html#_io_datatypes_.iuserrequest) object.  See  [https://phantomjscloud.com/docs/http-api/](https://phantomjscloud.com/docs/http-api/) for full details.  [The request default values can be seen here.](https://phantomjscloud.com/examples/helpers/pageRequestDefaults)
@@ -90,7 +115,10 @@ For making a single request.
 - **```RETURNS```**: A Promise returning a [```IUserResponse```](https://phantomjscloud.com/docs/http-api/index.html#_io_datatypes_.iuserresponse).      
 
 
-### ```browser.requestBatch(requests, customOptions?, callback? ) : Promise<IUserResponse>[]```
+### browser.requestBatch() 
+
+```browser.requestBatch(requests, customOptions?, callback? ) : Promise<IUserResponse>[]```
+
 Submit multiple requests at the same time, and get an array of promises back.  
 
 - **```requests```**:  An array.  Each element should be either be a [```IPageRequest```](https://phantomjscloud.com/docs/http-api/#_io_datatypes_.ipagerequest) or [```IUserRequest```](https://phantomjscloud.com/docs/http-api/index.html#_io_datatypes_.iuserrequest) object.  
@@ -98,7 +126,7 @@ Submit multiple requests at the same time, and get an array of promises back.
 - **```callback```**:  Optional.  For people who don't use promises.  If you use this, the function should have the signature ```(err: Error, item: {request, result}) => void```  This will be called once for each request sent.
 - **```RETURNS```**: An array of Promises.  Use a construct like [```bluebird.all()```](http://bluebirdjs.com/docs/api/promise.all.html) to wait for all to finish if you wish.
 
-### Typescript Typings
+## Typescript Typings
 If you use Visual Studio or VSCode the IntelliSense will automatically load when you: ```import phantomjscloud = require("phantomjscloud");``` 
 
 You do not need to load anything from the DefinitelyTyped nor Typings projects. 
@@ -171,67 +199,56 @@ Shows using all parameters in a request, capturing the page as a ```.jpg``` imag
 						"headers": {},
 						"data": null
 					},
-					"renderType": "jpg",
-					"outputAsJson": false,
-					"requestSettings": {
-						"ignoreImages": false,
-						"disableJavascript": false,
-						"userAgent": "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.34 (KHTML, like Gecko) Safari/534.34 PhantomJS/2.0.0 (PhantomJsCloud.com/2.0.1)",
-						"authentication": {
-							"userName": "guest",
-							"password": "guest"
-						},
-						"xssAuditingEnabled": false,
-						"webSecurityEnabled": false,
-						"resourceWait": 15000,
-						"resourceTimeout": 35000,
-						"maxWait": 35000,
-						"waitInterval": 1000,
-						"stopOnError": false,
-						"resourceModifier": [],
-						"customHeaders": {},
-						"clearCache": false,
-						"clearCookies": false,
-						"cookies": [],
-						"deleteCookies": []
+					renderType: 'jpg',
+					outputAsJson: false,
+					requestSettings: {
+						ignoreImages: false,
+						disableJavascript: false,
+						userAgent: 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.34 (KHTML, like Gecko) Safari/534.34 PhantomJS/2.0.0 (PhantomJsCloud.com/2.0.1)',
+						xssAuditingEnabled: false,
+						webSecurityEnabled: false,
+						resourceWait: 15000,
+						resourceTimeout: 35000,
+						maxWait: 35000,
+						ioWait: 2000,
+						waitInterval: 1000,
+						stopOnError: false,
+						resourceModifier: [],
+						customHeaders: {},
+						clearCache: false,
+						clearCookies: false,
+						cookies: [],
+						deleteCookies: [],
 					},
-					"suppressJson": [
-						"events.value.resourceRequest.headers",
-						"events.value.resourceResponse.headers",
-						"frameData.content",
-						"frameData.childFrames"
+					suppressJson: [
+						'events.value.resourceRequest.headers',
+						'events.value.resourceResponse.headers',
+						'frameData.content',
+						'frameData.childFrames',
 					],
-					"renderSettings": {
-						"quality": 70,
-						"pdfOptions": {
-							"border": null,
-							"footer": {
-								"firstPage": null,
-								"height": "1cm",
-								"lastPage": null,
-								"onePage": null,
-								"repeating": "%pageNum%/%numPages%"
-							},
-							"format": "letter",
-							"header": null,
-							"height": null,
-							"orientation": "portrait",
-							"width": null
+					renderSettings: {
+						quality: 70,
+						viewport: {
+						height: 1280,
+						width: 1280,
 						},
-						"clipRectangle": null,
-						"renderIFrame": null,
-						"viewport": {
-							"height": 1280,
-							"width": 1280
-						},
-						"zoomFactor": 1,
-						"passThroughHeaders": false
+						zoomFactor: 1,
+						passThroughHeaders: false,
+						emulateMedia: 'screen',
+						omitBackground: false,
+						passThroughStatusCode: false,
 					},
-					"scripts": {
-						"domReady": [],
-						"loadFinished": []
+					scripts: {
+						pageNavigated: [],
+						load: [],
+						domReady: [],
+						loadFinished: [],
+					},
+					scriptSettings: {
+						stopOnError: false,
+						async: false,
+					},
 					}
-				}
 			],
 			proxy:false
 		};
@@ -267,4 +284,13 @@ Internally this library will pool all requests and execute in a FIFO fashion.  T
 ## Contributing
 
 This is the official, reference API for [PhantomJsCloud.com](https://PhantomJsCloud.com)  You can help out by writing API Client Libraries for other languages *(lots of requests for PHP and Python!)*
+
+### Building
+
+If you want to build this yourself:
+
+
+- install ```npm install mocha -g```
+- install dependencies ```npm install```
+- Install vscode and run the project (see ```.vscode/launch.json``` for actual execution args)
 	 

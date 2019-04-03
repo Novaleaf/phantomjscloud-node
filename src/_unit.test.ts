@@ -67,10 +67,10 @@ describe( __filename, function unitTests() {
 	this.beforeAll( function beforeAll() {
 
 		const apiKey = xlib.environment.getEnvironmentVariable( "phantomjscloud_apikey" );
-		const endpointOrigin =
+		const endpointOrigin: string =
 			//	"http://localhost:80"; //used for UAT testing
 			//"https://phantomjscloud.com"; //PROD (explicit)
-			//"http://35.231.10.240"; //PREPROD
+			//"http://35.232.215.225"; //PREPROD
 			undefined; //PROD (implicit, default)
 
 		browser = new phantomjscloud.BrowserApi( { apiKey, endpointOrigin } );
@@ -83,7 +83,7 @@ describe( __filename, function unitTests() {
 
 	describe( "e2eDefaultBrowser", function e2eDefaultBrowser() {
 
-		it2( async function basicE2e() {
+		let test = it2( async function basicE2e() {
 
 			const pageRequest: phantomjscloud.ioDatatypes.IPageRequest = {
 				url: "https://localhost/examples/corpus/example.com.html", renderType: "html", backend: "chrome"
@@ -93,6 +93,7 @@ describe( __filename, function unitTests() {
 			log.assert( userResponse.content.data.indexOf( "Example Domain" ) >= 0 );
 
 		} );
+		test.timeout( 20000 );
 
 
 		it2( async function htmlBasicPageRequest() {
@@ -363,6 +364,7 @@ describe( __filename, function unitTests() {
 				outputAsJson: false,
 				urlSettings: {
 					operation: "POST",
+					// tslint:disable-next-line: max-line-length
 					data: "{\"loans\":[{\"account_id\":\"49790094591\",\"account_name\":\"สินเชื่อรถยนต์ใหม่\",\"account_type\":\"CARLOAN\",\"customer_name\":\"นาย บีเอสซีบีคอนเนค คอนเนค นาย\",\"status\":\"ACTIVE\",\"scb_connect\":true,\"linked_date\":\"1537499724000\"},{\"account_id\":\"49790094606\",\"account_name\":\"สินเชื่อรถยนต์ใหม่\",\"account_type\":\"CARLOAN\",\"customer_name\":\"นาย บีเอสซีบีคอนเนค คอนเนค นาย\",\"status\":\"INACTIVE\",\"scb_connect\":true,\"linked_date\":\"1537499724000\"},{\"account_id\":\"49790094614\",\"account_name\":\"สินเชื่อรถยนต์ใหม่\",\"account_type\":\"CARLOAN\",\"customer_name\":\"นาย บีเอสซีบีคอนเนค คอนเนค นาย\",\"status\":\"ACTIVE\",\"scb_connect\":true,\"linked_date\":\"1537499724000\"},{\"account_id\":\"49790094648\",\"account_name\":\"สินเชื่อรถยนต์ใหม่\",\"account_type\":\"CARLOAN\",\"customer_name\":\"นาย บีเอสซีบีคอนเนค คอนเนค นาย\",\"status\":\"ACTIVE\",\"scb_connect\":true,\"linked_date\":\"1537499724000\"},{\"account_id\":\"49790094656\",\"account_name\":\"สินเชื่อรถยนต์ใหม่\",\"account_type\":\"CARLOAN\",\"customer_name\":\"นาย บีเอสซีบีคอนเนค คอนเนค นาย\",\"status\":\"ACTIVE\",\"scb_connect\":true,\"linked_date\":\"1537499724000\"}]}"
 				},
 			};
@@ -387,7 +389,7 @@ describe( __filename, function unitTests() {
 			verifyResponseStatus( response );
 
 			log.assert( _.isPlainObject( response.content.data ), "content verification failed, script output not as expected.  expect a POJO", response.content.data );
-			const scriptOutput: { h1: string } = response.content.data as any;
+			const scriptOutput: { h1: string; } = response.content.data as any;
 			log.assert( scriptOutput.h1 === "Example Domain", "content verification failed, script output h1 element not as expected.  expect contents 'Example Domain'", response.content.data );
 			log.assert( response.content.name === "localhost-examples-corpus-example-com.json", "expect file extension to be JSON" );
 		} );
@@ -480,7 +482,7 @@ describe( __filename, function unitTests() {
 				},
 			};
 			const response = await browser.requestSingle( pageRequest );
-			verifyResponseStatus( response, { contentStatusCode: 408, doneDetail: "error:maxWait" } );
+			verifyResponseStatus( response, { contentStatusCode: 424, doneDetail: "error:maxWait" } );
 			log.assert( response.content.name === "localhost-blank.json" );
 			log.assert( response.content.size === 2 );
 			log.assert( _.isPlainObject( response.content.data ) );
@@ -712,7 +714,7 @@ describe( __filename, function unitTests() {
 				},
 			};
 			const response = await browser.requestSingle( pageRequest );
-			verifyResponseStatus( response, { contentStatusCode: 424, doneDetail: "error:scripts.loadFinished" } );
+			verifyResponseStatus( response, { contentStatusCode: 424 } );//, doneDetail: "error:scripts.loadFinished" } );
 		} ).timeout( 6000 );
 
 		it2( async function scriptFailureLoad() {
@@ -726,7 +728,7 @@ describe( __filename, function unitTests() {
 				},
 			};
 			const response = await browser.requestSingle( pageRequest );
-			verifyResponseStatus( response, { contentStatusCode: 424, doneDetail: "error:scripts.domReady" } );
+			verifyResponseStatus( response, { contentStatusCode: 424 } );//, doneDetail: "error:scripts.domReady" } );
 		} ).timeout( 6000 );
 
 

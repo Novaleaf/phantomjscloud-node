@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 global.__xlibInitArgs = Object.assign({ 
     //envLevel: "DEV",
@@ -56,7 +48,7 @@ exports.PhantomJsCloudBrowserApiException = PhantomJsCloudBrowserApiException;
 * The PhantomJsCloud Browser Api
 */
 class BrowserApi {
-    constructor(keyOrOptions = {}) {
+    constructor(/**options, or pass your PhantomJsCloud.com ApiKey here.   If you don't, you'll use the "demo" key, which is good for about 100 pages/day.   Signup at https://Dashboard.PhantomJsCloud.com to get 500 Pages/Day free*/ keyOrOptions = {}) {
         this._endpointPath = "/api/browser/v2/";
         this._defaultBrowserOptions = {
             endpointOrigin: "https://api.PhantomJsCloud.com",
@@ -69,7 +61,7 @@ class BrowserApi {
                 endpoint: {},
                 preRetryErrorIntercept: 
                 //if the API request fails, this function figures out if we should retry the request or report the failure to the user.
-                (err) => __awaiter(this, void 0, void 0, function* () {
+                async (err) => {
                     if (err.response == null) {
                         //no response so retry normally
                         return "RETRY";
@@ -106,7 +98,7 @@ class BrowserApi {
                     else {
                         return "ABORT";
                     }
-                }),
+                },
             }
         };
         if (typeof keyOrOptions === "string") {
@@ -117,6 +109,7 @@ class BrowserApi {
         }
         _.defaultsDeep(this.options, this._defaultBrowserOptions);
         //set the actual endpoint to be used internally, if not set via custom options
+        // tslint:disable-next-line: no-object-literal-type-assertion
         _.defaultsDeep(this.options, {
             endpointOptions: {
                 endpoint: { origin: this.options.endpointOrigin, path: `${this._endpointPath}${this.options.apiKey}/` }
@@ -132,62 +125,60 @@ class BrowserApi {
     * @param request
     * @param callback
     */
-    requestSingle(request, callback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            //convert the request into a userRequest object, if it was a pageRequest
-            let _request = request;
-            let userRequest;
-            if (_request.pages != null && _.isArray(_request.pages)) {
-                userRequest = _request;
-            }
-            else {
-                userRequest = { pages: [_request] };
-            }
-            //set outputAsJson
-            _.forEach(userRequest.pages, (page) => {
-                page.outputAsJson = true;
-            });
-            userRequest.outputAsJson = true;
-            // return this._endpoint.post(userRequest).then((axiosResponse) => {
-            //     if (callback != null) {
-            //         callback(undefined, axiosResponse.data);
-            //     }
-            //     return axiosResponse.data;
-            // }, (err: xlib.net.axios.AxiosError) => {
-            //     if (callback != null) {
-            //         callback(err, undefined);
-            //     }
-            //     return bb.reject(err);
-            // });
-            ///////////////////////////////////////  await inspect mode
-            // //try {        
-            const { toInspect } = yield xlib.promise.awaitInspect(this._endpoint.post(userRequest));
-            if (toInspect.isFulfilled()) {
-                const axiosResponse = toInspect.value();
-                if (callback != null) {
-                    callback(undefined, axiosResponse.data);
-                }
-                return axiosResponse.data;
-            }
-            else {
-                const err = toInspect.reason();
-                if (callback != null) {
-                    callback(err, undefined);
-                }
-                return bb.reject(err);
-            }
-            //     let axiosResponse = await this._endpoint.post(userRequest);
-            //     if (callback != null) {
-            //         callback(undefined, axiosResponse.data);
-            //     }
-            //     return axiosResponse.data;
-            // } catch (_err) {
-            //     if (callback != null) {
-            //         callback(_err, undefined);
-            //     }
-            //     throw _err;
-            // }
+    async requestSingle(request, callback) {
+        //convert the request into a userRequest object, if it was a pageRequest
+        let _request = request;
+        let userRequest;
+        if (_request.pages != null && _.isArray(_request.pages)) {
+            userRequest = _request;
+        }
+        else {
+            userRequest = { pages: [_request] };
+        }
+        //set outputAsJson
+        _.forEach(userRequest.pages, (page) => {
+            page.outputAsJson = true;
         });
+        userRequest.outputAsJson = true;
+        // return this._endpoint.post(userRequest).then((axiosResponse) => {
+        //     if (callback != null) {
+        //         callback(undefined, axiosResponse.data);
+        //     }
+        //     return axiosResponse.data;
+        // }, (err: xlib.net.axios.AxiosError) => {
+        //     if (callback != null) {
+        //         callback(err, undefined);
+        //     }
+        //     return bb.reject(err);
+        // });
+        ///////////////////////////////////////  await inspect mode
+        // //try {        
+        const { toInspect } = await xlib.promise.awaitInspect(this._endpoint.post(userRequest));
+        if (toInspect.isFulfilled()) {
+            const axiosResponse = toInspect.value();
+            if (callback != null) {
+                callback(undefined, axiosResponse.data);
+            }
+            return axiosResponse.data;
+        }
+        else {
+            const err = toInspect.reason();
+            if (callback != null) {
+                callback(err, undefined);
+            }
+            return bb.reject(err);
+        }
+        //     let axiosResponse = await this._endpoint.post(userRequest);
+        //     if (callback != null) {
+        //         callback(undefined, axiosResponse.data);
+        //     }
+        //     return axiosResponse.data;
+        // } catch (_err) {
+        //     if (callback != null) {
+        //         callback(_err, undefined);
+        //     }
+        //     throw _err;
+        // }
     }
     /**
     * make more than 1 browser request (PhantomJs call).  These are executed in parallel and is already optimized for PhantomJs Cloud auto-scaling, (The more your requests, the faster they will process.)

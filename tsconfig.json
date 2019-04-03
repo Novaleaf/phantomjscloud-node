@@ -1,11 +1,6 @@
-// * novaleaf tsconfig for inheritors of xlib v1
+//default for novaleaf stage5
 {
-  "compileOnSave": true,
-  "references": [
-    {
-      "path": "../xlib",
-    }
-  ],
+  //"compileOnSave": true,
   "compilerOptions": {
     "module": "commonjs",
     "removeComments": false,
@@ -13,10 +8,9 @@
     "sourceMap": true,
     "inlineSources": false,
     "inlineSourceMap": false,
-    "composite": true, // ! IMPORTANT this seems to screw up tsc complation, considder toggling.
+    //"composite": true,
     "declaration": true,
     "declarationMap": true,
-    "strict": false, /////////  change for vNext    
     "noEmitOnError": false,
     "jsx": "react",
     "newLine": "LF",
@@ -25,25 +19,29 @@
     //"diagnostics": true, // verbose debug output of tsc build
     //"listFiles": true, // verbose debug output of tsc build
     //"listEmittedFiles": true, // verbose debug output of tsc build
-    "target": "es6",
+    "target": "es2018", //es6 for browsers, node v10.15.2 supports es2018, node v8.x supports es2016  //! v15 (was es6)
     "watch": false,
     "moduleResolution": "node",
+    // * type strictness section    
+    "strict": false, /////////  change for vNext    
     "forceConsistentCasingInFileNames": true,
-    "noImplicitReturns": false, /////////  change for vNext
-    "noImplicitAny": false, /////////  change for vNext
-    "noImplicitThis": false, /////////  change for vNext
-    "noUnusedLocals": false, /////////  change for vNext
-    "noUnusedParameters": false,
-    "strictNullChecks": false, /////////  change for vNext
-    "suppressExcessPropertyErrors": true, /////////  change for vNext
-    "suppressImplicitAnyIndexErrors": true, /////////  change for vNext
-    "noStrictGenericChecks": true, /////////  change for vNext
+    "noImplicitReturns": true,
+    "noImplicitAny": true, //! v15
+    "noImplicitThis": true,
+    "noUnusedLocals": false, //no, little use, and causes things like unused interfaces to cause errors.
+    "noUnusedParameters": false, //no, as it causes parameters in anon functions to error.
+    "strictNullChecks": false, //! v16 maybe, to prevent unexpected null or undefines.  but it is VERY MUCH A PAIN IN THE ASS
+    "suppressExcessPropertyErrors": false,
+    "suppressImplicitAnyIndexErrors": false,
+    "noStrictGenericChecks": false, //! v15
     "skipLibCheck": false,
     "alwaysStrict": true,
     "allowJs": false,
-    "allowSyntheticDefaultImports": false,
+    "allowSyntheticDefaultImports": true, //! try
     "allowUnreachableCode": false,
     "allowUnusedLabels": true,
+    "strictFunctionTypes": true, //! v15
+    "strictPropertyInitialization": false, // ! v16 maybe, as it requires strictNullChecks to be true
     //"baseUrl": null,
     //"charset": null,
     "checkJs": false,
@@ -51,30 +49,79 @@
     "emitBOM": false,
     "emitDeclarationOnly": false,
     "disableSizeLimit": false,
-    "emitDecoratorMetadata": false, /////////  change for vNext
-    "esModuleInterop": false, /////////  change for vNext
-    "experimentalDecorators": false, /////////  change for vNext
-    "importHelpers": false, // tsc bug: even though tslib is in node_modules, tsc only sees it if at root level (not in a submodule)
-    "keyofStringsOnly": true,
+    "emitDecoratorMetadata": true, // ! try /////////  change for vNext
+    "esModuleInterop": true, // ! try
+    "experimentalDecorators": true, //! try
+    "importHelpers": true,
+    "keyofStringsOnly": false, //! v15
     "noErrorTruncation": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": false, /////////  change for vNext   
-    "outDir": "dist",
+    "isolatedModules": false, //can not do this and re-export types
+    "strictBindCallApply": true, //! v15
+    "typeRoots": [
+      "./src/types",
+    ],
+    "types": [],
+    "outDir": "built",
     "rootDir": "src",
+    // "lib": [
+    //   "es2015",
+    //   "dom",
+    // ],
+    //"noLib": true,
+    // "plugins": [
+    //   {
+    //     "name": "typescript-tslint-plugin"
+    //   }
+    // ]
+    "plugins": [
+      {
+        "name": "typescript-tslint-plugin",
+        "alwaysShowRuleFailuresAsWarnings": false,
+        "configFile": "./tslint.json",
+        "suppressWhileTypeErrorsPresent": false,
+        "ignoreDefinitionFiles": true, //change after first pass fix
+        // "exclude": [  //moved to tslint.json
+        //   "**/node_modules/**/*",
+        //   "**/_graveyard/**/*",
+        //   "./built/**/*",
+        // ],
+      }
+    ],
   },
   // "typeAcquisition": { //not enabling to force explicit usage of new types
   //   "enable": true,
   // },
-  // "include": [
-  //   "./src/**/*.ts",
-  //   "./src/_internal/**/*.ts",
-  // ],
+  "include": [
+    "./src/**/*.ts",
+    //"./src/_internal/**/*.ts",
+  ],
   "exclude": [
-    "node_modules",
-    "src/_graveyard",
-    "src/_to_refactor",
-    "dist",
-  ]
+    //"node_modules",
+    "./src/_graveyard/**/*.ts",
+    //"dist",
+  ],
+  // "typedocOptions": {
+  //   "mode": "modules",
+  //   "out": "docs",
+  //   "exclude": "test",
+  //   "theme": "default",
+  //   "ignoreCompilerErrors": true,
+  //   "excludePrivate": true,
+  //   "excludeNotExported": true,
+  //   "excludeExternals": false,
+  //   "excludeProtected": true,
+  //   //"target": "ES3",
+  //   "moduleResolution": "node",
+  //   "preserveConstEnums": true,
+  //   "stripInternal": true,
+  //   "suppressExcessPropertyErrors": true,
+  //   "suppressImplicitAnyIndexErrors": true,
+  //   "module": "commonjs",
+  //   "hideGenerator": true,
+  //   "includeDeclarations": false,
+  //   "readme": "none",
+  //   //"entryPoint": "\"src/xlib\""
+  // }
 }
