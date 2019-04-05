@@ -56,7 +56,7 @@ This library provides a simple and high quality mechanism for interacting with *
 		});
 ```
 
-**or a slightly more complex example using [Typescript](https://www.typescriptlang.org/)**:
+**or a slightly more complex example using ***async/await*** via [Typescript](https://www.typescriptlang.org/)**:
 
 ```javascript
 		//typings will automatically be loaded
@@ -65,21 +65,23 @@ This library provides a simple and high quality mechanism for interacting with *
 		let apiKey = undefined;//leave undefined to use a demo key.  get a free key at https://Dashboard.PhantomJsCloud.com
 		let browser = new phantomJsCloud.BrowserApi(apiKey);
 		
-		//the page you wish to render
-		let pageRequest: phantomJsCloud.ioDatatypes.IPageRequest = { url: "http://www.example.com", renderType:"plainText" };
-		
-		//make a request to render a single page, returning the plain-text contents of the page.
-		browser.requestSingle(pageRequest)
-			.then((userResponse) => {
-				console.log(JSON.stringify({
-					//the content of the page you requested
-					content: userResponse.content,
-					//metadata about your request, such as billing
-					meta: userResponse.meta,
-					//the status code of your request
-					statusCode: userResponse.statusCode
-				}, null, "\t")); //pretty-print
-			});
+		async function doWork(){
+			//the page you wish to render
+			let pageRequest: phantomJsCloud.ioDatatypes.IPageRequest = { url: "http://www.example.com", renderType:"plainText" };			
+
+			//make a request to render a single page, returning the plain-text contents of the page.
+			const userResponse = await browser.requestSingle(pageRequest);
+			console.log(JSON.stringify({
+				//the content of the page you requested
+				content: userResponse.content,
+				//metadata about your request, such as billing
+				meta: userResponse.meta,
+				//the status code of your request
+				statusCode: userResponse.statusCode
+			}, null, "\t")); //pretty-print
+
+		}
+		doWork();
 ```
 
 ## Options
