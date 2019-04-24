@@ -9,6 +9,16 @@ const _ = xlib.lodash;
 
 
 
+
+const apiKey = xlib.environment.getEnvironmentVariable( "phantomjscloud_apikey" );
+const defaultServer =
+	"http://localhost"; //used for DEV testing
+//"https://phantomjscloud.com"; //PROD (explicit)
+//"http://34.66.198.11"; //PREPROD
+//undefined; //PROD (implicit, default)
+const endpointOrigin: string = xlib.environment.getEnvironmentVariable( "TARGET_SERVER", defaultServer );
+
+
 const __verifyResponseStatus_defaultOptions = { contentStatusCode: 200, userResponseStatusCode: 200, backend: "chrome", doneDetail: "normal", contentType: "" };
 /** does basic verification of the userResponse common among most tests */
 function verifyResponseStatus( userResponse: ioDatatypes.IUserResponse, options: Partial<typeof __verifyResponseStatus_defaultOptions> = __verifyResponseStatus_defaultOptions ) {
@@ -27,9 +37,9 @@ function verifyResponseStatus( userResponse: ioDatatypes.IUserResponse, options:
 		log.assert( userResponse.content.headers[ "content-type" ].includes( options.contentType ), `content-type header not what expected. got ${ userResponse.content.headers[ "content-type" ] } but expect it to include "${ options.contentType }"` );
 	}
 
-	log.assert( userResponse.meta.billing.creditCost > 0, "invalid creditCost" );
-	log.assert( userResponse.meta.billing.dailySubscriptionCreditsRemaining >= 0, "invalid dailySubscriptionCreditsRemaining" );
-	log.assert( userResponse.meta.billing.prepaidCreditsRemaining >= 0, "invalid prepaidCreditsRemaining" );
+	log.assert( userResponse.meta.billing.creditCost > 0, "invalid creditCost", userResponse.meta.billing );
+	log.assert( userResponse.meta.billing.dailySubscriptionCreditsRemaining >= 0, "invalid dailySubscriptionCreditsRemaining", userResponse.meta.billing );
+	log.assert( userResponse.meta.billing.prepaidCreditsRemaining >= 0, "invalid prepaidCreditsRemaining", userResponse.meta.billing );
 
 	xlib.lodash.forEach( userResponse.pageResponses, ( pageResponse ) => {
 		//log.assert( pageResponse.metrics.pageStatus === options.contentStatusCode.toString(), "pageResponse.metrics.pageStatus", pageResponse.metrics.pageStatus, { options, pageResponse: JSON.stringify( pageResponse ) } );
@@ -54,7 +64,9 @@ function _nullAllProperties( obj: any ) {
 function it2( testFcn: () => Promise<any> ) {
 	const testName = xlib.reflection.getTypeName( testFcn );
 	return it( testName, async function () {
+		// tslint:disable-next-line: no-invalid-this
 		const timeoutMs = this.timeout();
+		// tslint:disable-next-line: no-invalid-this
 		return xlib.promise.bluebird.resolve( testFcn.apply( this ) ).timeout( timeoutMs, new xlib.promise.bluebird.TimeoutError( `operation timed out.  Max of ${ timeoutMs }ms exceeded` ) );
 	} );
 }
@@ -62,17 +74,12 @@ function it2( testFcn: () => Promise<any> ) {
 describe( __filename, function unitTests() {
 
 	let browser: phantomjscloud.BrowserApi;
-
+	// tslint:disable-next-line: no-invalid-this
 	this.timeout( 10000 ); //set default timeout for these pjsc tests
+	// tslint:disable-next-line: no-invalid-this
 	this.beforeAll( function beforeAll() {
-
-		const apiKey = xlib.environment.getEnvironmentVariable( "phantomjscloud_apikey" );
-		const endpointOrigin: string =
-			//	"http://localhost:80"; //used for UAT testing
-			//"https://phantomjscloud.com"; //PROD (explicit)
-			//"http://35.232.215.225"; //PREPROD
-			undefined; //PROD (implicit, default)
-
+		log.throwCheck( endpointOrigin.startsWith( "http" ), `your endpointOrigin of "${ endpointOrigin }"  does not start with 'http'.  you likely forgot it.` );
+		log.info( "SETTINGS FROM ENV", { endpointOrigin, apiKey } );
 		browser = new phantomjscloud.BrowserApi( { apiKey, endpointOrigin } );
 
 
@@ -86,7 +93,7 @@ describe( __filename, function unitTests() {
 		let test = it2( async function basicE2e() {
 
 			const pageRequest: phantomjscloud.ioDatatypes.IPageRequest = {
-				url: "https://localhost/examples/corpus/example.com.html", renderType: "html", backend: "chrome"
+				url: "http://localhost/examples/corpus/example.com.html", renderType: "html", backend: "chrome"
 			};
 
 			const userResponse = await browser.requestSingle( pageRequest );
@@ -94,6 +101,8 @@ describe( __filename, function unitTests() {
 
 		} );
 		test.timeout( 20000 );
+
+
 
 
 		it2( async function htmlBasicPageRequest() {
@@ -140,7 +149,7 @@ describe( __filename, function unitTests() {
 			const pageRequest: ioDatatypes.IPageRequest = {
 				url: "http://localhost/examples/helpers/requestdata",
 				renderType: "plainText",
-				content: "<html><script>window.location='https://localhost/examples/corpus/example.com.html';</script><h1>hello-world</h1></html>",
+				content: "<html><script>window.location='http://localhost/examples/corpus/example.com.html';</script><h1>hello-world</h1></html>",
 			};
 			const response = await browser.requestSingle( pageRequest );
 			verifyResponseStatus( response );
@@ -517,32 +526,32 @@ describe( __filename, function unitTests() {
 			log.assert( response.content.data.indexOf( pdfMakeOutputEnd ) === response.content.data.length - 1 - pdfMakeOutputEnd.length );
 		} );
 
-		/** from email conversation with priceline around 20181017, they need to know when a page fails to load properly  */
-		it2( async function pricelineBlankPageDetectableError() {
-			const pageRequest: ioDatatypes.IPageRequest = {
-				url: null,
-				content: "http://localhost/examples/customer-tests/priceline-blank.html",
-				"outputAsJson": true,
-				"requestSettings": {
-					"disableJavascript": true,
-					"resourceWait": 500,
-					"waitInterval": 500,
-					//"resourceModifier": [   {    "regex": ".*qaa.priceline.com.*",    "changeUrl": "$$protocol://www.priceline.com$$path",   }  ],
-				},
-				"renderSettings": {
-					"pdfOptions": {
-						"format": "onepage"
-					}
-				},
-				"renderType": "plainText",
-				//"renderType": "jpeg",
-			};
-			const response = await browser.requestSingle( pageRequest );
-			verifyResponseStatus( response, { contentStatusCode: 408 } ); //prod times out on this 
-			log.assert( response.content.name === "localhost-blank.text" );
-			log.assert( response.content.data.includes( "Complete Your Booking" ) );//"Hotels Cars Flights" ) );
-			log.assert( response.content.resourceSummary.failed > 0 );
-		} ).timeout( 40000 );
+		// /** from email conversation with priceline around 20181017, they need to know when a page fails to load properly  */
+		// it2( async function pricelineBlankPageDetectableError() {
+		// 	const pageRequest: ioDatatypes.IPageRequest = {
+		// 		url: null,
+		// 		content: "http://localhost/examples/customer-tests/priceline-blank.html",
+		// 		"outputAsJson": true,
+		// 		"requestSettings": {
+		// 			"disableJavascript": true,
+		// 			"resourceWait": 500,
+		// 			"waitInterval": 500,
+		// 			//"resourceModifier": [   {    "regex": ".*qaa.priceline.com.*",    "changeUrl": "$$protocol://www.priceline.com$$path",   }  ],
+		// 		},
+		// 		"renderSettings": {
+		// 			"pdfOptions": {
+		// 				"format": "onepage"
+		// 			}
+		// 		},
+		// 		"renderType": "plainText",
+		// 		//"renderType": "jpeg",
+		// 	};
+		// 	const response = await browser.requestSingle( pageRequest );
+		// 	verifyResponseStatus( response, { contentStatusCode: 408 } ); //prod times out on this 
+		// 	log.assert( response.content.name === "localhost-blank.text" );
+		// 	log.assert( response.content.data.includes( "Complete Your Booking" ) );//"Hotels Cars Flights" ) );
+		// 	log.assert( response.content.resourceSummary.failed > 0 );
+		// } ).timeout( 40000 );
 		/** from email conversation with priceline around 20181017, they need to know when a page fails to load properly  */
 		it2( async function pricelineBlankPageDetectableErrorViaTimeout() {
 			const pageRequest: ioDatatypes.IPageRequest = {
@@ -603,26 +612,71 @@ describe( __filename, function unitTests() {
 
 
 
+	it2( async function invalidApiKey() {
+
+		const pageRequest: ioDatatypes.IPageRequest = {
+			url: "http://localhost/examples/corpus/example.com.html",
+			renderType: "plainText",
+		};
+		let invalidApiKey = "ak-11111-22222-33333-44444-55555";
+		let invalidKeyBrowser = new phantomjscloud.BrowserApi( { apiKey: invalidApiKey, endpointOrigin } );
+
+
+		try {
+
+			const response = await invalidKeyBrowser.requestSingle( pageRequest );
+			log.warnFull( "testing invalidApiKey", { response } );
+		} catch ( _err ) {
+			if ( _err.response != null && _err.request && _err instanceof Error ) {
+				const axiosErr = _err as xlib.net.axios.AxiosError;
+				log.assert( axiosErr.response != null && axiosErr.response.status === 401, "expected error status 424", { axiosErr } );
+				if ( axiosErr.response == null || axiosErr.response.status !== 401 ) {
+					log.errorFull( { axiosErr } );
+				}
+			} else {
+				throw _err;
+			}
+		}
+
+	} );
+
+
 	describe( "failureTests", function failureTests() {
 
 		it2( async function invalidDomain() {
 
+
+			// const pageRequest: phantomjscloud.ioDatatypes.IPageRequest = {
+			// 	url: "http://localhost/examples/corpus/example.com.html", renderType: "html", backend: "chrome"
+			// };
+
+			// const userResponse = await browser.requestSingle( pageRequest );
+			// log.assert( userResponse.content.data.indexOf( "Example Domain" ) >= 0 );
+
+
+
+			// log.info( "ABOUT TO RUN invalidDomain", browser._endpoint.defaultOptions.endpoint );
+
 			let pageRequest: ioDatatypes.IPageRequest = {
-				url: "https://www.exadsfakjalkjghlalkjrtiuibe.com",
+				url: "https://exadsfakjalkjghlalkjrtiuibe.com",
 				renderType: "plainText",
 			};
 			try {
 				const userResponse = await browser.requestSingle( pageRequest );
-				throw log.error( "should have failed...", { userResponse } );
+				log.error( "should have failed...", { userResponse } );
+				throw new Error( "should have failed" );
 			} catch ( _err ) {
 				if ( _err.response != null && _err.request && _err instanceof Error ) {
 					const axiosErr = _err as xlib.net.axios.AxiosError;
 					log.assert( axiosErr.response != null && axiosErr.response.status === 424, "expected error status 424", { axiosErr } );
+					if ( axiosErr.response == null || axiosErr.response.status !== 424 ) {
+						log.errorFull( { axiosErr } );
+					}
 				} else {
 					throw _err;
 				}
 			}
-		} ).timeout( 20000 );
+		} ).timeout( 6000 );
 
 		it2( async function invalidPort() {
 			let pageRequest: ioDatatypes.IPageRequest = {

@@ -32,7 +32,7 @@
     "test": "mocha ./built/**/*.test.js --watch"
   },
   "dependencies": {
-    "xlib": "^16.1.0"
+    "xlib": "^16.0.0"
   },
   "devDependencies": {
     "mocha": "^5.2.0"

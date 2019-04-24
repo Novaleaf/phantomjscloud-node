@@ -7,6 +7,7 @@ This library provides a simple and high quality mechanism for interacting with *
 	- [Chrome by default.](#chrome-by-default)
 	- [Requirements](#requirements)
 	- [Platforms](#platforms)
+		- [LITE version for browsers:](#lite-version-for-browsers)
 	- [Basic Usage](#basic-usage)
 	- [Options](#options)
 		- [phantomJsCloud.BrowserApi()](#phantomjscloudbrowserapi)
@@ -32,10 +33,12 @@ This library provides a simple and high quality mechanism for interacting with *
 ***Optional***: Get an ApiKey by creating an account at [PhantomJsCloud.com](https://PhantomJsCloud.com) 
 
 ## Platforms
-- This works in Node.js and Browsers (via Browserify or Webpack).
+- This works in Node.js, and ***SHOULD*** work with Browsers (via Browserify or Webpack).
 - Also tested to work using node via **Amazon Lambda** and **Google Cloud Functions**.
 	
+### LITE version for browsers:  
 
+If you are running in a browser and this package isn't working for you, try ```npm install phantomjscloud-lite``` as it removes a lot of nodejs dependencies.
 
 
 ## Basic Usage
