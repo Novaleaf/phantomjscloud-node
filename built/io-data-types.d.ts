@@ -19,6 +19,31 @@ export interface IProcessManagerOptions {
      */
     id: string;
 }
+/** object passed to [[IRequestSettings]].[[IRequestSettings.doneWhen]], for determining when to stop the page and render early. */
+export interface IDoneWhen {
+    /** if set, will render when the page event occurs.  By default we wait until all network requests are complete, after the load event.  *(note: this can be controlled via [[IRequestSettings.resourceWait]] also).
+     *
+     * **Currently buggy**
+     */
+    event?: "load" | "domReady";
+    /** match a [CSS Selector](https://developer.mozilla.org/en-US/docs/Learn/CSS/Introduction_to_CSS/Selectors)  */
+    selector?: string;
+    /** match a [XPath lookup](https://developer.mozilla.org/en-US/docs/Web/XPath) */
+    xpath?: string;
+    /** if the page's plain-text contains the given string (case sensitive) */
+    text?: string;
+    /** if the page's plain-text matches the given [Regular Expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) */
+    textRegEx?: string;
+    /** if the page's html contains the given string (case sensitive) */
+    html?: string;
+    /** if the page's html matches the given [Regular Expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) */
+    htmlRegEx?: string;
+    /** specify what status code you want returned. when your criteria is met
+     *
+     * @default 200
+     */
+    statusCode?: number;
+}
 /** the new options for rendering PDF's using our Chrome [[IPageRequest.backend|backend]].  If you are using the old ```WebKit``` [[IPageRequest.backend|backend]], see ```IPdfOptions_WebKit```
 *
 * Note: by default PDF's use the CSS ```@screen``` media type.  to change this, set [[IRenderSettings.emulateMedia]] to a value such as ```print```
@@ -37,8 +62,7 @@ export interface IPdfOptions {
         Note:  page css is not available to this template, so include inline-css for styling.
     
     
-        @example  ```<span style='font-size: 15px; height: 200px; background-color: black; color: white; margin: 20px;'>Header or Footer. <span style='font-size: 10px;'>Keep templates simple, and inline CSS.
-        Page:<span class='pageNumber'>XX</span>/<span class='totalPages'>YY</span></span></span>```
+        @example  ```headerTemplate:"<span style='font-size: 15px; height: 200px; background-color: black; color: white; margin: 20px;'>Header or Footer. <span style='font-size: 10px;'>Keep templates simple, and inline CSS.		Page:<span class='pageNumber'>XX</span>/<span class='totalPages'>YY</span></span></span>"```
     */
     headerTemplate?: string;
     /** a HTML template, use the following classes to inject print values into their respective elements:
@@ -48,8 +72,7 @@ export interface IPdfOptions {
         *
         Note:  page css is not available to this template, so include inline-css for styling.
     
-        @example  ```<span style='font-size: 15px; height: 200px; background-color: black; color: white; margin: 20px;'>Header or Footer. <span style='font-size: 10px;'>Keep templates simple, and inline CSS.
-        Page:<span class='pageNumber'>XX</span>/<span class='totalPages'>YY</span></span></span>```
+        @example  ```footerTemplate:"<span style='font-size: 15px; height: 200px; background-color: black; color: white; margin: 20px;'>Header or Footer. <span style='font-size: 10px;'>Keep templates simple, and inline CSS.		Page:<span class='pageNumber'>XX</span>/<span class='totalPages'>YY</span></span></span>"```
     */
     footerTemplate?: string;
     landscape?: boolean;
@@ -109,17 +132,17 @@ export interface IPdfOptions {
 @Example
 ```json
 {
-    border: "0",
-    footer: {
-        firstPage: "", height: "1cm", lastPage: "", onePage: "", repeating: "<h1><span style='float:right'>%pageNum%/%numPages%</span></h1>"
-    },
-    format: "letter",
-    header: {
-        firstPage: "", height: "0cm", lastPage: "", onePage: "", repeating: ""
-    },
-    height: "11in",
-    orientation: "portrait",
-    width: "8.5in", 	}
+border: "0",
+footer: {
+    firstPage: "", height: "1cm", lastPage: "", onePage: "", repeating: "<h1><span style='float:right'>%pageNum%/%numPages%</span></h1>"
+},
+format: "letter",
+header: {
+    firstPage: "", height: "0cm", lastPage: "", onePage: "", repeating: ""
+},
+height: "11in",
+orientation: "portrait",
+width: "8.5in", 	}
 ```
 */
 export interface IPdfOptions_WebKit {
@@ -239,10 +262,13 @@ export interface IRequestSettings {
     /** maximum amount of time to wait for each external resource to load.
      * we kill the request if it exceeds this amount. */
     resourceTimeout?: number;
-    /** the maximum amount of time (ms timeout) you wish to wait for the target page to finish loading.
+    /** The maximum amount of time (ms timeout) you wish to wait for the target page to finish loading.  Default is ```35000``` (35 seconds).
+         *
      * When rendering a page, we will give you whatever is ready at this time (page may be incompletely loaded).
+         *
      * Can be increased up to 5 minutes (300000) , but that only should be used as a last resort,
      * as it is a relatively expensive page render (you are billed for render time).
+         *
                 * if this value is exceeded, the current page will be rendered "normally" (status 200),
                 however you may inspect the target page's status code by looking at ```pjsc-content-status-code``` header, or ```content.statusCode``` if outputting as JSON.
         */
@@ -264,65 +290,72 @@ export interface IRequestSettings {
     /** if true, will stop [[IPageRequest]] load upon the first error detected, and move to next phase (render or next page) */
     stopOnError?: boolean;
     /** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
- *
- * **Experimental**:  There are some bugs, and this future may be adjusted in the comming months based on usage feedback.  If you have any comments/questions, please email Support@PhantomJsCloud.com
- *
- * As soon as your criteria is met, will trigger the completion of your apge (But still respects [[waitInterval]] delay and in-progress injected scripts).   If the all the criteria is not met, the page will continue waiting, until the [[maxWait]] is timeout reached.
- *
- * You may pass an array so that you can detect modify the response status code, and whichever element matches will be noted in the ```userResponse.content.doneWhen``` node, and in the ```pjsc-content-done-when``` HTTP Response Header.
- *
- * **Usage Notes**:
- *
- * 1) each doneWhen element may have one or more criteria.  All criteria must be met for the load to be considered done.   Pass multiple array elements if you want "```OR```" style functionality.
- *
- * 2) Scanning for your critera is performed aproximately every 50ms.  This means that rapid changes to the web page may be overlooked.
- *
- * 3) ***If you need finer control of completion*** use [[IScriptPjscMeta.manualWait]] and/or [[IScriptPjscMeta.forceFinish]] by injecting a custom script via [[IPageRequest.scripts]].
- * @example
- *
- * ```
+     *
+     * Render the page early, once a specific criteria is found on the page.
+     *
+     * Syntax:  ```doneWhen``` = Array of [[IDoneWhen]] objects.
+    *
+    * **Experimental**:  There are some bugs, and this future may be adjusted in the comming months based on usage feedback.  If you have any comments/questions, please email Support@PhantomJsCloud.com
+    *
+    * As soon as your criteria is met, will trigger the completion of your apge (But still respects [[waitInterval]] delay and in-progress injected scripts).   If the all the criteria is not met, the page will continue waiting, until the [[maxWait]] is timeout reached.
+    *
+    * You may pass an array so that you can detect modify the response status code, and whichever element matches will be noted in the ```userResponse.content.doneWhen``` node, and in the ```pjsc-content-done-when``` HTTP Response Header.
+    *
+    * **Usage Notes**:
+    *
+    * 1) each doneWhen element may have one or more criteria.  All criteria must be met for the load to be considered done.   Pass multiple array elements if you want "```OR```" style functionality.
+    *
+    * 2) Scanning for your critera is performed aproximately every 50ms.  This means that rapid changes to the web page may be overlooked.
+    *
+    * 3) ***If you need finer control of completion*** use [[IScriptPjscMeta.manualWait]] and/or [[IScriptPjscMeta.forceFinish]] by injecting a custom script via [[IPageRequest.scripts]].
+    * @example
+    *
+    * ```
     {
-url:"https://PhantomJsCloud.com/examples/corpus/ajax.html",
-"requestSettings":{
+    url:"https://PhantomJsCloud.com/examples/corpus/ajax.html",
+    "requestSettings":{
     "doneWhen":[
         {"text":'"statusCode":206',statusCode:202},
         {"selector":"pre#fill-target",statusCode:201},
         ],
     waitInterval:0,
-},
-renderSettings:{
+    },
+    renderSettings:{
     passThroughStatusCode:true,
-},
-}
+    },
+    }
     ```
- *
- */
-    doneWhen?: Array<{
-        /** if set, will render when the page event occurs.  By default we wait until all network requests are complete, after the load event.  *(note: this can be controlled via [[IRequestSettings.resourceWait]] also).
-         *
-         * **Currently buggy**
-         */
-        event?: "load" | "domReady";
-        /** match a [CSS Selector](https://developer.mozilla.org/en-US/docs/Learn/CSS/Introduction_to_CSS/Selectors)  */
-        selector?: string;
-        /** match a [XPath lookup](https://developer.mozilla.org/en-US/docs/Web/XPath) */
-        xpath?: string;
-        /** if the page's plain-text contains the given string (case sensitive) */
-        text?: string;
-        /** if the page's plain-text matches the given [Regular Expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) */
-        textRegEx?: string;
-        /** if the page's html contains the given string (case sensitive) */
-        html?: string;
-        /** if the page's html matches the given [Regular Expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) */
-        htmlRegEx?: string;
-        /** specify what status code you want returned. when your criteria is met
-         *
-         * @default 200
-         */
-        statusCode?: number;
-    }>;
+    *
+    */
+    doneWhen?: Array<IDoneWhen>;
     /** array of regex + adjustment parametes for modifying or rejecting resources being loaded by the webpage.
-     * Example:  ```"resourceModifier": [{regex:".*css.*",isBlacklisted:true}{"regex": "http://mydomain.com.*","setHeader": {"hello": "world","Accept-encoding": "tacos"}}]```
+         *
+         * @example:
+         * ```
+         * //screenshot of amazon.com using a random ip, without images, fonts, or css
+    {
+    url:"https://www.amazon.com",
+    renderType:"jpeg",
+    proxy:"anon-any",
+    requestSettings:{
+        resourceModifier:[
+            {type:"stylesheet" ,isBlacklisted:true},
+            {type:"font" ,isBlacklisted:true},
+            {type:"image" ,isBlacklisted:true},
+            ],
+    },
+    }
+    ```
+     * @example:
+         * ```
+         * //load a page blacklisting css, and setting additional headers for all resources from mydomain.com
+         * { url:"http://www.example.com",
+         * requestSettings:{
+        *   "resourceModifier": [{regex:".*css.*",isBlacklisted:true}{"regex": "http://mydomain.com.*","setHeader": {"hello": "world","Accept-encoding": "tacos"}}]
+         * },
+         * }
+         *
+         * ```
      */
     resourceModifier?: IResourceModifier[];
     /**
@@ -417,9 +450,11 @@ export interface IPageRequest {
          * Alternatively, you can provide a url as the content.  This will load the contents of the url and use that as the content string.
          *
          * @example
+         * ```javascript
          * {url:"http://example.com/page1",content:"http://example.com/page2", renderType:"png"}  //replace the contents of page1 with those of page2 and takes a screenshot
          *
          * {url:"<h1>Hello, World!</h1>", renderType:"png"} //loads http://localhost/blank with the contents "<h1>Hello, World!</h1>" and takes a screenshot
+         * ```
      */
     content?: string;
     /** adjustable parameters for when making network requests to the url specified */
@@ -428,7 +463,7 @@ export interface IPageRequest {
          *
         ```jpeg``` | ```jpg``` :  The default.  renders page as jpeg.   transparency not supported. (use ```png``` for transparency).  Max height/width is 20000px.  If you need bigger, let support@phantomjscloud.com know. ,
         
-        ```png```: renders page as png.  Max default height/width is ```10000```px.  If you need bigger, set [[IRenderSettings.clipRect]] or [[IRenderSettings.selector]] directly (such as ```renderSettings.selector:"body"```). ,
+        ```png```: renders page as png.  Max default height/width is ```10000```px.  If you need bigger, set [[IRenderSettings.clipRectangle]] or [[IRenderSettings.selector]] directly (such as ```renderSettings.selector:"body"```). ,
         
         ```pdf```: renders page as a pdf,
         
@@ -442,12 +477,38 @@ export interface IPageRequest {
     outputAsJson?: boolean;
     /** settings related to requesting internet resources (your page and resources referenced by your page) */
     requestSettings?: IRequestSettings;
-    /** add the nodes from your pageResponse that you do not wish to transmit.  This reduces the size of your data, thus reducing cost and transmission time.
+    /** add the nodes from your pageResponse that you do not wish to transmit.  Used in conjunction with [[queryJson]] this allows you to reduce outputAsJson verbosity and only return the data you want, thus reducing cost and transmission time.
      * if you need the data in these nodes, simply remove it from this array.   pass an empty array to return all nodes.
          *
-         * @example: [ "pageResponses.events.value.request.headers", "pageResponses.events.value.response.headers", "pageResponses.frameData.content", "pageResponses.frameData.childFrames" ]
+         * **important**:  do not suppress the ```"meta"``` node.  However you can suppress ```"meta.trace"``` if you wish.
+         *
+         *
+         * @example:
+         * ```javascript
+         * //POST request JSON payload
+         * { url:"https://phantomjscloud.com/examples/helpers/requestdata",
+         *    suppressJson: [ "pageResponses.events.value.request.headers", "pageResponses.events.value.response.headers", "pageResponses.frameData.content", "pageResponses.frameData.childFrames" ]
+         * }
+         * ```
      */
     suppressJson?: string[];
+    /** use ```JSONata``` to query the userResponse object.   Used in conjunction with [[suppressJson]] this allows you to reduce outputAsJson verbosity and only return the data you want.
+     *
+     * You may pass multiple queries (comma delimited string array of queries).   Each query's result will be appended to the [[IUserResponse.queryJson]] node.
+     *
+     * See [http://jsonata.org/](http://jsonata.org/) for  how to create your own custom query
+     *
+     * @example
+     * ```
+     * //request JSON showing how to return only "requestFinished" events and the content data
+     * {
+     *      url:"http://www.example.com",
+     *      suppressJson:["pageResponses","originalRequest","content","meta.trace"],
+     *      queryJson:["pageResponses.events[key='requestFinished']","content.data"],
+     * }
+     * ```
+     */
+    queryJson?: string[];
     /** settings related to rendering of the last page of your request.  See the [[IRenderSettings]] documentation (below) for details*/
     renderSettings?: IRenderSettings;
     /**
@@ -462,12 +523,37 @@ export interface IPageRequest {
     backend?: IBackendType;
     /** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```)..  extra settings if you use injected ```scripts```. */
     scriptSettings?: IScriptSettings;
+    /** shortcut for using our builtin proxy service.  Please use [[IUserRequest]].```proxy``` for full configuration options ( [[IProxyOptions]] )
+     *
+     * - **Geolocation using Static IP**   Costs an additional $0.25/gb ingress.
+     *    - "```geo-us```"  all your requests use a single, static IP (```35.188.112.61```) from the USA.
+     *
+     * - **Anonymous Proxy**   Costs an additional $0.50/gb ingress
+     *    - "```anon-{country-code}```"  Each request uses a different, anonymous IP address.  Choose ```any``` for the largest selection of IP addresses from anywhere in the world.
+         * Other choices include ```cn``` (China), ```nl``` (Netherlands), ```us``` (USA).  Please see http://phantomjscloud.com/examples/helpers/proxy-builtin-locations for a complete list.
+     *
+     * - **Custom Proxy**  No additional cost.
+     *    - "```custom-{proxyUrl}:{port}:{username}:{password}```" Use a 3rd party proxy of your own choice.  username and password are optional.
+     *
+     * @example
+     * ```javascript
+     * //POST request JSON payload to use a worldwide anonymous proxy
+     * { url:"https://phantomjscloud.com/examples/helpers/requestdata", proxy:"anon-any"}
+     * //anonymous proxy from Netherlands
+     * { url:"https://phantomjscloud.com/examples/helpers/requestdata", proxy:"anon-nl"}
+     * //static IP from USA
+     * { url:"https://phantomjscloud.com/examples/helpers/requestdata", proxy:"geo-us"}
+     * //use your custom 3rd party proxy
+     * { url:"https://phantomjscloud.com/examples/helpers/requestdata", proxy:"custom-http://myProxy.com:8838:myname:secret"}
+     * ```
+    */
+    proxy?: string;
 }
 /** select the browser engine you will use
 *
 * you may choose from the following shortcuts:  "```default```", "```preview```", "```webkit```", "```chrome```"
 
-* ```default```:  currently ```webkit pjs2.1.1```, will change to ```chrome``` soon
+* ```default```:  currently points to ```chrome```
 
 * ```preview```:  currently ```chrome```. may change at any time as this is for testing new backends or feature enhancements.
 
@@ -475,7 +561,7 @@ export interface IPageRequest {
 
 * ```chrome```:  the latest stable version of chrome
 
-* or choose a specific backend: ```chrome v68```, ```webkit pjs2.1.1```, ```webkit pjs2.5beta```
+* or choose a specific backend: ```chrome```, ```webkit pjs2.1.1```, ```webkit pjs2.5beta```
 
 * */
 export declare type IBackendType = "default" | "chrome" | "webkit" | "preview" | "webkit pjs2.1.1" | "webkit pjs2.5beta";
@@ -661,7 +747,7 @@ export interface IRenderSettings {
          * set screen dpi scaling.  default is 1.   */
         deviceScaleFactor?: number;
     };
-    /** This property specifies the scaling factor for the screenshot (requestType png/pdf) choices.  The default is 1, i.e. 100% zoom.   Use [[viewport.deviceScaleFactor]] if you need to control screen DPI */
+    /** This property specifies the scaling factor for the screenshot (requestType png/pdf) choices.  The default is 1, i.e. 100% zoom.   Use ```IRenderSettings.viewport.deviceScaleFactor``` if you need to control screen DPI */
     zoomFactor?: number;
     /** This property defines the rectangular area of the web page to be rasterized when using the requestType of png or jpeg. If no clipping rectangle is set, the entire web page is captured.
     Beware: if you capture too large an  image it can cause your request to fail (out of memory).  you can choose any dimensions you wish as long as you do not exceed 32M pixels
@@ -688,7 +774,11 @@ export interface IRenderSettings {
      * However, we do not pass through "content-*" and "transfer-*" headers, except for "Content-Type" if you render "html".
      * Please note: this can potentially corrupt your response, so use with caution.
      * ```extraResponseHeaders``` override these headers.
-     * @default false*/
+     * @default false
+         *
+         *
+         * **IMPORTANT:** response headers should not exceed ```128Kb``` or your API call may fail.
+         * */
     passThroughHeaders?: boolean;
     /** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
         *
@@ -707,6 +797,8 @@ export interface IRenderSettings {
      * custom response headers you want sent along with your response.
      * For example, to rename the file being downloaded,
      * you can add ```'Content-Disposition: attachment; filename="downloaded.pdf"'```
+         *
+         * **IMPORTANT:** response headers should not exceed ```128Kb``` or your API call may fail.
         */
     extraResponseHeaders?: {
         [name: string]: string;
@@ -734,7 +826,7 @@ export interface IPngOptions {
 /**
 * @deprecated for use with the old ```WebKit``` [[IPageRequest.backend|backend]].   for the new ```Chrome``` based [[IPageRequest.backend|backend]], see ```IPdfOptions```
 *
- options for specifying headers or footers in a pdf render.  */
+options for specifying headers or footers in a pdf render.  */
 export interface IPdfHeaderFooter_WebKit {
     /** required.  Supported dimension units are: 'mm', 'cm', 'in', 'px'. No unit means 'px'.*/
     height: string;
@@ -772,12 +864,82 @@ export interface IUserRequest {
      * */
     webSecurityEnabled?: boolean;
 }
-/** allows specifying a proxy for your [[IUserRequest]] (all the [[IPageRequest]] it contains).
+/** To use our automatic proxy solution set to ```{auto:"random"}```
 *
 * Alternatively, you may use your own custom proxy server by setting the ```custom``` parameter.
+*
+* @example
+* ```javascript
+* //request JSON:  geolocate to the USA using a static IP address ($0.25/gb ingress)
+* {
+* pages:[{url:"https://phantomjscloud.com/examples/helpers/requestdata"}]},
+* proxy:{geolocation:"us"},
+* }
+* ```
+*
+* @example
+* ```javascript
+* //request JSON:  use an anonymous IP address from somewhere in the world ($0.50/gb ingress)
+* {
+* pages:[{url:"https://phantomjscloud.com/examples/helpers/requestdata"}]},
+* proxy:{builtin:{location:"any"}},
+* }
+* ```
+*
+* @example
+* ```javascript
+* //request JSON:  use an anonymous IP address from Germany ($0.50/gb ingress)
+* {
+* pages:[{url:"https://phantomjscloud.com/examples/helpers/requestdata"}]},
+* proxy:{builtin:{location:"de"}},
+* }
+* ```
+*
+* @example
+* ```javascript
+* //request JSON:  /use a custom proxy (no extra charge)
+* {
+* pages:[{url:"https://phantomjscloud.com/examples/helpers/requestdata"}]},
+* proxy:{custom:{host:"http://my-3rd-Party-Proxy-Provider.com:8375",auth:"username:password"}},
+* }
+* ```
 */
 export interface IProxyOptions {
-    /** allows you to use a custom proxy server.  if you set this, the built-in proxy will not be used. default=NULL */
+    /** Forces your requests to be sent from a specific geographic location and fixed geoIP address at that location.  For the IP address used for each geolocation, please view this link:  http://phantomjscloud.com/examples/helpers/proxy-fixed-ips
+     *
+     * Can be used in conjunction with a [[IProxyOptions.custom]] proxy, meaning that your custom proxy will see requests comming from this geoIP.
+     *
+     * This is useful if you need to either use a fixed IP address for whitelist purposes.
+     *
+     * Please do not rely only on a fixed IP address for authentication, as it is shared by other users.   Use a secure URL or header for private information.
+     *
+     * ***Additional Cost:*** choosing a ```geolocation``` costs an additional $0.25/gb for data ingress.
+     *
+     * ***Note: geoIP may (rarely) change***:  very occasionally the geoIP for a given geolocation may change, such as if we make infrastructure changes.  Please refer to http://phantomjscloud.com/examples/helpers/proxy-fixed-ips  for geoIP updates.
+     *
+     * **Need another location**?  email support@phantomjscloud.com and let us know.     More choices will come later.
+     */
+    geolocation?: "us";
+    /** use an anonymizing proxy builtin to our service.  Each API call you make will use a different IP address choosen from our proxy pool.
+     *
+     * ***Additional Cost:*** using a builtin anonymizing proxy costs more, depending on type.  See ```builtin.type``` for details.
+     *
+     */
+    builtin?: {
+        /** choose the type of builtin proxy to use
+         * - ```dc``` The Default.   Uses Datacenter IP addresses.  Costs an additional **$0.50/gb** for data ingress
+         *
+         * - No other builtin proxy types are currently available.  If you are interested in residential proxies please contact support@phantomjscloud.com
+            */
+        type?: "dc";
+        /**
+         * The country you want your requests to come from.
+         *
+         * Choose ```any``` for the largest selection of IP addresses from anywhere in the world.  Other choices include ```cn``` (China), ```de``` (Germany), ```us``` (USA).  Please see http://phantomjscloud.com/examples/helpers/proxy-builtin-locations for a complete list.
+         */
+        location: string;
+    };
+    /** allows you to use a custom proxy server.  if you set this, a built-in proxy will not be used (no additional cost) but processing speed may be restricted due to your custom proxy's available bandwidth. */
     custom?: IProxyCustomOptions;
 }
 export interface IProxyCustomOptions {
@@ -794,14 +956,15 @@ export interface IProxyCustomOptions {
                 *
                 * **IMPORTANT**: authentication is only supported for ```http``` and ```https``` proxies.  If you are using a ```socks5``` proxy, auth is not currently supported.
         *
-        @example  "username:password"
+                @example
+                ```        auth:"username:password"          ```
     */
     auth?: string;
     /** new for ```Chrome``` [[IPageRequest.backend|backend]].  (not available on ```WebKit```).
         *
         * the headers that should be supplied for proxy authentication.  they will be sent with every resource request
         *
-    * @example {"Proxy-Authorization":"Basic yoursecretkey"}
+    * @example ```authHeaders:{"Proxy-Authorization":"Basic yoursecretkey"}```
         */
     authHeaders?: {
         [name: string]: string;
@@ -898,7 +1061,12 @@ export interface IUserResponse {
             /** the end time of your [[IUserRequest]]. */
             endTime?: string;
             elapsedMs: number;
+            /** bytes egress */
             bytes: number;
+            /** bytes ingress when using a built-in proxy (including geolocation) */
+            proxyIngressBytes: number;
+            /** cost of geo or builtin proxy */
+            proxyIngressCost: number;
             /** the total cost of this response */
             creditCost?: number;
             prepaidCreditsRemaining?: number;
@@ -923,6 +1091,8 @@ export interface IUserResponse {
     statusCode: number;
     /** if an error was detected, we will try to supply a statusMessage to help debug.  Additionally,this will be placed as the ```pjsc-status-message``` response header. */
     statusMessage: string;
+    /** output from [[IPageRequest.queryJson]].  used to reduce output verbosity. */
+    queryJson: any[];
 }
 /** Information about the [[IPageRequest]] transaction (request and it's response).   */
 export interface IPageResponse {
@@ -997,7 +1167,7 @@ export interface IPageResponse {
      *
      * ```url```: the url of the resource.  if it's longer than 100 characters, the first and last 50 characters will be shown.
      *
-     * @example ["{elapsed:12,detail:'complete:200:OK',start:'124(initialRequest)',ended:'136(initialRequest)',frame:'main(nav)',type:'document',url:''http://localhost/blank''}"]
+     * @example ```resources:["{elapsed:12,detail:'complete:200:OK',start:'124(initialRequest)',ended:'136(initialRequest)',frame:'main(nav)',type:'document',url:''http://localhost/blank''}"]```
     */
     resources?: string[];
 }

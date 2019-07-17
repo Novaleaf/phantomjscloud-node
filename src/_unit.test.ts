@@ -19,6 +19,10 @@ const defaultServer =
 const endpointOrigin: string = xlib.environment.getEnvironmentVariable( "TARGET_SERVER", defaultServer );
 
 
+/** some of our tests need a publically accessable browser-api server (example:  using 3rd party proxy)  so if we are using a localhost, we'll use phantomjscloud.com in those circumstances */
+const publicllyAccessableBrowserApiServer = endpointOrigin.includes( "localhost" ) ? "https://phantomjscloud.com" : endpointOrigin;
+
+
 const __verifyResponseStatus_defaultOptions = { contentStatusCode: 200, userResponseStatusCode: 200, backend: "chrome", doneDetail: "normal", contentType: "" };
 /** does basic verification of the userResponse common among most tests */
 function verifyResponseStatus( userResponse: ioDatatypes.IUserResponse, options: Partial<typeof __verifyResponseStatus_defaultOptions> = __verifyResponseStatus_defaultOptions ) {
@@ -26,25 +30,25 @@ function verifyResponseStatus( userResponse: ioDatatypes.IUserResponse, options:
 	options = xlib.lodash.defaultsDeep( options, __verifyResponseStatus_defaultOptions );
 	const responseSummary = xlib.serialization.jsonX.inspectParse( userResponse );
 
-	log.assert( userResponse != null, "response null", { options, userResponse } );
-	log.assert( userResponse.statusCode === options.userResponseStatusCode, "responseStatusCode", userResponse.statusCode, { options, responseSummary } );
-	log.assert( userResponse.content.statusCode === options.contentStatusCode, "contentStatusCode", userResponse.content.statusCode, { options, responseSummary } );
-	log.assert( userResponse.meta.backend.platform.toLowerCase() === options.backend.toLowerCase(), "backend", userResponse.meta.backend, { options, responseSummary } );
+	log.throwCheck( userResponse != null, "response null", { options, userResponse } );
+	log.throwCheck( userResponse.statusCode === options.userResponseStatusCode, "responseStatusCode", userResponse.statusCode, { options, responseSummary } );
+	log.throwCheck( userResponse.content.statusCode === options.contentStatusCode, `contentStatusCode is unexpected.  we got ${ userResponse.content.statusCode } but expected ${ options.contentStatusCode }`, { options, responseSummary } );
+	log.throwCheck( userResponse.meta.backend.platform.toLowerCase() === options.backend.toLowerCase(), "backend", userResponse.meta.backend, { options, responseSummary } );
 	if ( options.backend === "chrome" ) {
-		log.assert( JSON.stringify( userResponse.content.doneDetail ).includes( options.doneDetail ), "doneDetail", userResponse.content.doneDetail, { options, responseSummary } );
+		log.throwCheck( JSON.stringify( userResponse.content.doneDetail ).includes( options.doneDetail ), "doneDetail", userResponse.content.doneDetail, { options, responseSummary } );
 	}
 	if ( options.contentType != null && options.contentType.length > 0 ) {
-		log.assert( userResponse.content.headers[ "content-type" ].includes( options.contentType ), `content-type header not what expected. got ${ userResponse.content.headers[ "content-type" ] } but expect it to include "${ options.contentType }"` );
+		log.throwCheck( userResponse.content.headers[ "content-type" ].includes( options.contentType ), `content-type header not what expected. got ${ userResponse.content.headers[ "content-type" ] } but expect it to include "${ options.contentType }"` );
 	}
 
-	log.assert( userResponse.meta.billing.creditCost > 0, "invalid creditCost", userResponse.meta.billing );
-	log.assert( userResponse.meta.billing.dailySubscriptionCreditsRemaining >= 0, "invalid dailySubscriptionCreditsRemaining", userResponse.meta.billing );
-	log.assert( userResponse.meta.billing.prepaidCreditsRemaining >= 0, "invalid prepaidCreditsRemaining", userResponse.meta.billing );
+	log.throwCheck( userResponse.meta.billing.creditCost > 0, "invalid creditCost", userResponse.meta.billing );
+	log.throwCheck( userResponse.meta.billing.dailySubscriptionCreditsRemaining >= 0, "invalid dailySubscriptionCreditsRemaining", userResponse.meta.billing );
+	log.throwCheck( userResponse.meta.billing.prepaidCreditsRemaining >= 0, "invalid prepaidCreditsRemaining", userResponse.meta.billing );
 
 	xlib.lodash.forEach( userResponse.pageResponses, ( pageResponse ) => {
 		//log.assert( pageResponse.metrics.pageStatus === options.contentStatusCode.toString(), "pageResponse.metrics.pageStatus", pageResponse.metrics.pageStatus, { options, pageResponse: JSON.stringify( pageResponse ) } );
 		if ( options.backend === "chrome" ) {
-			log.assert( JSON.stringify( pageResponse.doneDetail ).includes( options.doneDetail ), "pageResponse.doneDetail", pageResponse.doneDetail, { options, pageResponse: JSON.stringify( pageResponse ) } );
+			log.throwCheck( JSON.stringify( pageResponse.doneDetail ).includes( options.doneDetail ), "pageResponse.doneDetail", pageResponse.doneDetail, { options, pageResponse: JSON.stringify( pageResponse ) } );
 		}
 	} );
 }
@@ -90,6 +94,14 @@ describe( __filename, function unitTests() {
 
 	describe( "e2eDefaultBrowser", function e2eDefaultBrowser() {
 
+		it2( async function docPageUp() {
+
+			let result = await xlib.net.axios.default.get( `${ endpointOrigin }/docs/http-api/` );
+			log.throwCheck( result.status === 200, "docs returned wrong statusCode.  expected 200, got", result.status );
+			//log.throwCheck((result.data as string).includes("")
+
+		} );
+
 		let test = it2( async function basicE2e() {
 
 			const pageRequest: phantomjscloud.ioDatatypes.IPageRequest = {
@@ -131,6 +143,72 @@ describe( __filename, function unitTests() {
 		// // 	verifyResponseStatus( response, { contentStatusCode: 408, doneDetail: "error:maxWait" } );
 		// // 	log.assert( response.content.data.includes( "this page will make ajax calls" ), "content verification failed", response.content.data );
 		// // } );
+
+		interface IHelperRequestData {
+			headers: { [ key: string ]: string; };
+			client: {
+				received: string;
+				remoteAddress: string;
+				referrer: string;
+				host: string;
+				acceptEncoding: string;
+				hostname: string;
+				latency?: string;
+				location: {
+					country?: string;
+					//country_alt?: string;
+				};
+			};
+			method: string;
+			mime: string;
+			orig: any;
+			params: any;
+			paramsArray: any[];
+			path: string;
+			url: any;
+			payload: any;
+
+		}
+
+
+		it2( async function geolocation_us() {
+			//make sure the geolocation proxies work as expected.
+
+			const userRequest: ioDatatypes.IUserRequest = {
+				pages: [ {
+					url: `${ publicllyAccessableBrowserApiServer }/examples/helpers/requestdata`,
+					renderType: "plainText",
+				} ],
+				proxy: {
+					geolocation: "us",
+				},
+			};
+
+			log.infoFull( "geolocation_us about to make request", userRequest );
+			const response = await browser.requestSingle( userRequest );
+			verifyResponseStatus( response );
+			log.assert( response.content.data.includes( "requestdata" ), "content verification failed", response.content.data );
+			let requestData: IHelperRequestData = JSON.parse( response.content.data );
+			log.throwCheck( requestData.client.remoteAddress === "35.188.112.61", `unexpected remoteAddress.  it should match the IP(s) exposed by the proxy (used by it's cloud NAT config).`, {} );
+
+		} );
+
+		it2( async function proxy_builtin_anon_nl() {
+			//make sure the builtin anonymous proxy works as expected, via shortcut
+
+			const userRequest: ioDatatypes.IPageRequest = {
+				url: `${ publicllyAccessableBrowserApiServer }/examples/helpers/requestdata`,
+				renderType: "plainText",
+				proxy: "anon-nl",
+			};
+			log.infoFull( "proxy_builtin_anon_de about to make request", userRequest );
+			const response = await browser.requestSingle( userRequest );
+			verifyResponseStatus( response );
+			log.assert( response.content.data.includes( "requestdata" ), "content verification failed", response.content.data );
+			let requestData: IHelperRequestData = JSON.parse( response.content.data );
+			log.throwCheck( requestData.client.location.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${ requestData.client.location.country }`, {} );
+
+		} );
 
 
 
@@ -329,9 +407,54 @@ describe( __filename, function unitTests() {
 		} );
 
 
+		it2( async function jsonDecreaseVerbosity() {
+			const pageRequest: ioDatatypes.IPageRequest = //request JSON showing how to return only "requestFinished" events and the content data  (greatly reduce outputAsJson verbosity)
+			{
+				url: "https://www.example.com/",
+				outputAsJson: true,
+				renderType: "plainText",
+				suppressJson: [
+					"pageResponses",
+					"content",
+					"meta.trace",
+					"originalRequest",
+				],
+				queryJson: [
+					"pageResponses.events[key='requestFinished']",
+					"content.data",
+				],
+			};
+			const response = await browser.requestSingle( pageRequest );
+			verifyResponseStatus( response );
+			//log.throwCheck( response.queryJson.length == 2 );
+
+			log.throwCheck( response.queryJson != null && response.queryJson.length === 2 && response.queryJson[ 1 ].includes( `Example Domain` ), "content verification failed, 'Example Domain' text in queryJson result not found", response.queryJson );
+		} );
+
+
+		it2( async function authBasic() {
+
+			//length
+			const pageRequest: ioDatatypes.IPageRequest = {
+				url: 'http://localhost/examples/helpers/auth',
+				renderType: 'plainText',
+				requestSettings: {
+					authentication: {
+						userName: "hello",
+						password: "world",
+					},
+				}
+			};
+			const response = await browser.requestSingle( pageRequest );
+			verifyResponseStatus( response );
+			log.assert( response.content.data.includes( `"authorization": "Basic aGVsbG86d29ybGQ=",` ), "content verification failed, auth header token not found", response.content.data );
+		} );
+
+
 
 		it2( async function postBasic() {
 
+			//length
 			const pageRequest: ioDatatypes.IPageRequest = {
 				url: "http://localhost/examples/helpers/requestdata",
 				renderType: "html",
@@ -344,6 +467,8 @@ describe( __filename, function unitTests() {
 			verifyResponseStatus( response );
 			log.assert( response.content.data.includes( `"my": "postData"` ), "content verification failed, post payload not found", response.content.data );
 		} );
+
+
 
 		it2( async function postJson_with_passThroughHeaders() {
 
@@ -612,36 +737,38 @@ describe( __filename, function unitTests() {
 
 
 
-	it2( async function invalidApiKey() {
-
-		const pageRequest: ioDatatypes.IPageRequest = {
-			url: "http://localhost/examples/corpus/example.com.html",
-			renderType: "plainText",
-		};
-		let invalidApiKey = "ak-11111-22222-33333-44444-55555";
-		let invalidKeyBrowser = new phantomjscloud.BrowserApi( { apiKey: invalidApiKey, endpointOrigin } );
-
-
-		try {
-
-			const response = await invalidKeyBrowser.requestSingle( pageRequest );
-			log.warnFull( "testing invalidApiKey", { response } );
-		} catch ( _err ) {
-			if ( _err.response != null && _err.request && _err instanceof Error ) {
-				const axiosErr = _err as xlib.net.axios.AxiosError;
-				log.assert( axiosErr.response != null && axiosErr.response.status === 401, "expected error status 424", { axiosErr } );
-				if ( axiosErr.response == null || axiosErr.response.status !== 401 ) {
-					log.errorFull( { axiosErr } );
-				}
-			} else {
-				throw _err;
-			}
-		}
-
-	} );
-
 
 	describe( "failureTests", function failureTests() {
+
+
+
+		it2( async function invalidApiKey() {
+
+			const pageRequest: ioDatatypes.IPageRequest = {
+				url: "http://localhost/examples/corpus/example.com.html",
+				renderType: "plainText",
+			};
+			let _invalidApiKey = "ak-11111-22222-33333-44444-55555";
+			let invalidKeyBrowser = new phantomjscloud.BrowserApi( { apiKey: _invalidApiKey, endpointOrigin } );
+
+
+			try {
+
+				const response = await invalidKeyBrowser.requestSingle( pageRequest );
+				log.warnFull( "testing invalidApiKey", { response } );
+			} catch ( _err ) {
+				if ( _err.response != null && _err.request && _err instanceof Error ) {
+					const axiosErr = _err as xlib.net.axios.AxiosError;
+					log.assert( axiosErr.response != null && axiosErr.response.status === 401, "expected error status 424", { axiosErr } );
+					if ( axiosErr.response == null || axiosErr.response.status !== 401 ) {
+						log.errorFull( { axiosErr } );
+					}
+				} else {
+					throw _err;
+				}
+			}
+
+		} );
 
 		it2( async function invalidDomain() {
 
@@ -676,7 +803,7 @@ describe( __filename, function unitTests() {
 					throw _err;
 				}
 			}
-		} ).timeout( 6000 );
+		} ).timeout( 12000 );
 
 		it2( async function invalidPort() {
 			let pageRequest: ioDatatypes.IPageRequest = {

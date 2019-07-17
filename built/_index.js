@@ -1,10 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-global.__xlibInitArgs = Object.assign({ 
+global.__xlibInitArgs = {
     //envLevel: "DEV",
     //logLevel: "ERROR",
     //disableEnvAutoRead: false, //won't read env vars from environment, which can override your passed in vars    
-    silentInit: true }, global.__xlibInitArgs);
+    silentInit: true,
+    //let any previously set args override these
+    ...global.__xlibInitArgs
+};
 const xlib = require("xlib");
 var _ = xlib.lodash;
 var bb = xlib.promise.bluebird;
