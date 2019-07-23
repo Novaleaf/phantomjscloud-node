@@ -279,6 +279,15 @@ export interface IUrlSettings {
 // 	password?: string;
 // }
 
+// export interface IAutomationSettings {
+//     /** a specially sandboxed script that can "oversee" and control your browser page.
+//      * 
+//      * This javascript code will get launched immediately before your target page ([[IPageRequest.url]]) starts loading.   */
+//     overseerScript?: string;
+
+//     overseerScriptEncoding?: "base64" | "utf-8";
+// }
+
 /** settings related to requesting internet resources (your page and resources referenced by your page) */
 export interface IRequestSettings {
 	/**
@@ -556,6 +565,26 @@ export interface IPageRequest {
 	/** adjustable parameters for when making network requests to the url specified */
 	urlSettings?: IUrlSettings;
 
+
+
+	/** ## NEW AUTOMATION API
+	 * 
+	 * 
+	 * This api allows unparalleled control over your browser request.  Using this Automation API you will be able to do the following things easily:
+- **USER INPUT**: Control the Keyboard, Mouse, or Touchscreen directly, as a human would.
+- **MULTI-RENDERS**: Render multiple screenshots or PDF's of the page, at times you decide.
+- **CUSTOM LOGIC**: A secure sandbox allows custom code *(```ES2018``` javascript)* execution inside your API call.  This enables dynamic query/manipulation of the page.  Full control over the browser.
+- **PUPPETEER SCRIPTS**: This API is a superset of Puppeteer, allowing for full Puppeteer script compatability.  *Currently 90% of Puppeteer API's are supported.  (Element Handles and Event callback property sub-execution functions are not yet implemented in this ```PREVIEW```)*
+
+See the **[New Automation API Docs](./automation/index.html)** for more information. 
+
+### Usage:
+- If you pass in an overseerScript, the [[url]] fields is optional (as you can navigate to one or many url's from your overseerScript).
+- Consider also using the ```renderType:"automation"``` to display only your automation output.
+	 */
+	overseerScript?: string;
+
+
 	/** ```html```: returns the html text,
 		 * 
 		```jpeg``` | ```jpg``` :  The default.  renders page as jpeg.   transparency not supported. (use ```png``` for transparency).  Max height/width is 20000px.  If you need bigger, let support@phantomjscloud.com know. ,
@@ -566,7 +595,12 @@ export interface IPageRequest {
 		
 		```script```: returns the contents of ```window['_pjscMeta'].scriptOutput```.   see the [[IScripts]]  parameter for more details,
 		
-	```plainText```: return the text without html tags (page plain text),*/
+				```plainText```: return the text without html tags (page plain text),
+	
+				```automation```: output only the results from the automation [[IPageRequest.overseerScript]].  See [[IAutomationResult]] for a description of this JSON output.  If you set ```[[outputAsJson]]:true```, 
+				automation Results will always be found under [[IPageResponse]].automation but if ```renderType:"automation"``` is set, ```userResponse.content.data``` will also be set to the [[IAutomationResult]] json.
+	
+		*/
 	renderType?: string;
 	// passThroughResponseHeaders: boolean = false;
 
@@ -574,6 +608,8 @@ export interface IPageRequest {
 	 * if FALSE, we return the rendered content in it's native form.
 	 */
 	outputAsJson?: boolean;
+
+	//automationSettings?: IAutomationSettings;
 
 	/** settings related to requesting internet resources (your page and resources referenced by your page) */
 	requestSettings?: IRequestSettings;
@@ -730,6 +766,7 @@ export function pageRequestDefaultsGet(): IPageRequest {
 			cookies: <ICookie[]>[],
 			deleteCookies: <string[]>[]
 		},
+		//automationSettings: {},
 		suppressJson: [
 			"events.value.resourceRequest.headers",
 			"events.value.resourceResponse.headers",
@@ -783,7 +820,8 @@ export function pageRequestDefaultsGet(): IPageRequest {
 		scriptSettings: {
 			stopOnError: false,
 			async: false,
-		}
+		},
+		queryJson: [],
 
 	};
 	return pageRequestDefaults;
@@ -1281,7 +1319,7 @@ export interface IUserResponse {
 	content: {
 		/** the final url of the [[IPageRequest]] after redirects */
 		url: string;
-		/** data in either base64 or utf8 format */
+		/** data in either base64 or utf8 format, or JSON.  see ```content.encoding``` and ```content.name``` for hints as to the type  */
 		data: string;
 		/** filename you could use if saving the content to disk. this will be something like 'content.text', 'content.jpeg', 'content.pdf'
 		 * thus this informs you of the content type
@@ -1295,6 +1333,10 @@ export interface IUserResponse {
 		// type: string;
 		/** the size of data, in bytes */
 		size: number;
+
+
+
+
 
 		/** status of the content.   
 		 * 
@@ -1342,6 +1384,7 @@ export interface IUserResponse {
 		eventPhase?: IPageEventPhase;
 		/** new for Chrome [[IPageRequest.backend|backend]].  summary of all resources requested by the page.   see [[IPageResponse.resources]] for detailed listings */
 		resourceSummary?: IResourceSummary;
+
 	};
 	// metrics?: {
 	// 	renderStatus: number;
@@ -1419,6 +1462,28 @@ export interface IUserResponse {
 	/** output from [[IPageRequest.queryJson]].  used to reduce output verbosity. */
 	queryJson: any[];
 }
+
+
+export interface IAutomationResult {
+	renders: {
+		type: "pdf" | "png" | "jpeg" | "html" | "plainText";
+		path?: string;
+		timestamp: string;
+		url: string;
+		encoding: "base64" | "utf-8";
+		data: string;
+		length: number;
+	}[];
+
+	storage: Record<string, any>;
+
+	logs: Array<{ time: string; value: any; }>;
+
+	errors: Array<{ message: string; timestamp: string; details?: any; }>;
+
+}
+
+
 /** Information about the [[IPageRequest]] transaction (request and it's response).   */
 export interface IPageResponse {
 	/** the request you sent, including defaults for any parameters you did not include */
@@ -1493,6 +1558,10 @@ export interface IPageResponse {
 	 * @example ```resources:["{elapsed:12,detail:'complete:200:OK',start:'124(initialRequest)',ended:'136(initialRequest)',frame:'main(nav)',type:'document',url:''http://localhost/blank''}"]```
 	*/
 	resources?: string[];
+
+
+	/** if your pageRequest contains an automation ```overseerScript```, it's output will be here.  see [[IPageRequest.overseerScript]] for details */
+	automationResult: IAutomationResult;
 }
 
 /**  new for Chrome [[IPageRequest.backend|backend]]. summary of all resources requested during the page execution, and their current status upon page completion. */

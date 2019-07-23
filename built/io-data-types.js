@@ -35,6 +35,7 @@ function pageRequestDefaultsGet() {
             cookies: [],
             deleteCookies: []
         },
+        //automationSettings: {},
         suppressJson: [
             "events.value.resourceRequest.headers",
             "events.value.resourceResponse.headers",
@@ -73,7 +74,8 @@ function pageRequestDefaultsGet() {
         scriptSettings: {
             stopOnError: false,
             async: false,
-        }
+        },
+        queryJson: [],
     };
     return pageRequestDefaults;
 }

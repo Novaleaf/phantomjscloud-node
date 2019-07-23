@@ -47,8 +47,8 @@
 				"--colors",
 				//"--trace-warnings",
 				// "--grep",
-				// "geolocation_us",
-				//".*user scenarios.*",
+				// // "geolocation_us",
+				// ".*automation.*",
 				//"chromePdfMake.*",
 			],
 			"args": [

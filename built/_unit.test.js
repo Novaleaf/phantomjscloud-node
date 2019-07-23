@@ -151,7 +151,7 @@ describe(__filename, function unitTests() {
                 url: "http://localhost/examples/corpus/ajax.html",
                 renderType: "plainText",
                 requestSettings: {
-                    doneWhen: [{ text: `"statusCode":206`, statusCode: 202 }, { selector: "pre#fill-target", statusCode: 201 }],
+                    doneWhen: [{ text: '"statusCode":206', statusCode: 202 }, { selector: "pre#fill-target", statusCode: 201 }],
                 },
             };
             const response = await browser.requestSingle(pageRequest);
@@ -311,7 +311,9 @@ describe(__filename, function unitTests() {
                 ],
             };
             const response = await browser.requestSingle(pageRequest);
-            verifyResponseStatus(response);
+            //verifyResponseStatus( response, { contentStatusCode: null } ); //we suppress the content node
+            log.throwCheck(typeof (response.content) === "string" && response.content.startsWith("OUTPUT SUPPRESSED"));
+            log.throwCheck(response.statusCode === 200);
             //log.throwCheck( response.queryJson.length == 2 );
             log.throwCheck(response.queryJson != null && response.queryJson.length === 2 && response.queryJson[1].includes(`Example Domain`), "content verification failed, 'Example Domain' text in queryJson result not found", response.queryJson);
         });
@@ -583,6 +585,21 @@ describe(__filename, function unitTests() {
             log.assert(response.content.resourceSummary.failed === 0);
         }).timeout(10000);
     }); //end describe userScenarios
+    describe("automation", function automation() {
+        let test = it2(async function basicAutomation() {
+            const pageRequest = {
+                url: null,
+                //url:"http://www.example.com",
+                //renderType:"plainText",
+                renderType: "automation",
+                overseerScript: '	await page.goto(`http://www.example.com`); await page.meta.store.set("content",await page.content());'
+            };
+            const userResponse = await browser.requestSingle(pageRequest);
+            let automationResult = userResponse.content.data;
+            log.assert(automationResult.storage != null && automationResult.storage["content"].indexOf("Example Domain") >= 0);
+        });
+        test.timeout(20000);
+    });
     describe("failureTests", function failureTests() {
         it2(async function invalidApiKey() {
             const pageRequest = {
