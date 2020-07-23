@@ -197,7 +197,7 @@ describe( __filename, function unitTests() {
 			//make sure the builtin anonymous proxy works as expected, via shortcut
 
 			const userRequest: ioDatatypes.IPageRequest = {
-				url: `${ publicllyAccessableBrowserApiServer }/examples/helpers/requestdata`,
+				url: `https://phantomjscloud.com/examples/helpers/requestdata`,
 				renderType: "plainText",
 				proxy: "anon-nl",
 			};
@@ -206,7 +206,7 @@ describe( __filename, function unitTests() {
 			verifyResponseStatus( response );
 			log.assert( response.content.data.includes( "requestdata" ), "content verification failed", response.content.data );
 			let requestData: IHelperRequestData = JSON.parse( response.content.data );
-			log.throwCheck( requestData.client.location.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${ requestData.client.location.country }`, {} );
+			log.throwCheck( requestData.client.location.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${ requestData.client.location.country }.  Please note that our upstream proxy provider doesn't properly route proxy locations if you specify an IP ADDRESS as the target (domain name taregets work fine)`, {} );
 
 		} );
 
@@ -246,7 +246,7 @@ describe( __filename, function unitTests() {
 			const response = await browser.requestSingle( pageRequest );
 			verifyResponseStatus( response, { contentStatusCode: 201, doneDetail: "pre#fill-target" } );
 			log.assert( response.content.data.includes( "this page will make ajax calls" ), "content verification failed", response.content.data );
-		} );
+		} ).timeout( 20000 );
 
 		it2( async function doneWhenDomReady() {
 			// loads up an expensive page and renders as soon as possible, tossing out unneeded contents
@@ -373,6 +373,7 @@ describe( __filename, function unitTests() {
 
 
 
+
 		it2( async function translation() {
 
 			const pageRequest: ioDatatypes.IPageRequest = {
@@ -383,8 +384,22 @@ describe( __filename, function unitTests() {
 			};
 			const response = await browser.requestSingle( pageRequest );
 			verifyResponseStatus( response );
-			log.assert( response.content.data.indexOf( `예 도메인` ) === 0, "content verification failed", response.content.data );
+			log.assert( response.content.data.indexOf( `도메인` ) >= 0, "content verification failed.  expect the word 'Domain' translated to Korean.", response.content.data );
 		} );
+
+		it2( async function timezone() {
+
+			const pageRequest: ioDatatypes.IPageRequest = {
+				"url": "http://localhost/examples/corpus/timezone.html",
+				"renderType": "plainText",
+				"overseerScript": "await page.emulateTimezone('Asia/Tokyo');",
+			};
+			const response = await browser.requestSingle( pageRequest );
+			verifyResponseStatus( response );
+			log.assert( response.content.data.indexOf( `Asia/Tokyo` ) >= 0, "content verification failed.  expect to set timezone to Tokyo, but it didnt", response.content.data );
+		} );
+
+
 
 
 		it2( async function redirect_with_scripts_also_verify_content_properties() {
@@ -731,7 +746,7 @@ describe( __filename, function unitTests() {
 			verifyResponseStatus( response );
 			log.assert( response.content.name === "localhost-blank.text" );
 			log.assert( response.content.data.includes( "Complete Your Booking" ) );
-			log.assert( response.content.resourceSummary.failed === 0 );
+			log.assert( response.content.resourceSummary.failed <= 2 );
 		} ).timeout( 10000 );
 
 

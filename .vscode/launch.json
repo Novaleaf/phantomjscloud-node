@@ -39,6 +39,7 @@
 			"smartStep": true,
 			"stopOnEntry": false,
 		},
+		///////////////////////////////////////////
 		{
 			"type": "node",
 			"request": "launch",
@@ -63,7 +64,7 @@
 			"runtimeExecutable": "mocha",
 			//"program": "${workspaceFolder}/dist/_index.js",
 			"restart": true,
-			"console": "externalTerminal",
+			"console": "integratedTerminal", //"externalTerminal",
 			"internalConsoleOptions": "neverOpen",
 			"protocol": "inspector",
 			"sourceMaps": true,
