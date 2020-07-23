@@ -124,7 +124,7 @@ describe(__filename, function unitTests() {
             verifyResponseStatus(response);
             log.assert(response.content.data.includes("requestdata"), "content verification failed", response.content.data);
             let requestData = JSON.parse(response.content.data);
-            log.throwCheck(requestData.client.location.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${requestData.client.location.country}.  Please note that luminati.io doesn't properly route proxy locations if you specify an IP ADDRESS as the target (domain name taregets work fine)`, {});
+            log.throwCheck(requestData.client.location.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${requestData.client.location.country}.  Please note that our upstream proxy provider doesn't properly route proxy locations if you specify an IP ADDRESS as the target (domain name taregets work fine)`, {});
         });
         it2(async function contentInjection() {
             const pageRequest = {
@@ -275,7 +275,17 @@ describe(__filename, function unitTests() {
             };
             const response = await browser.requestSingle(pageRequest);
             verifyResponseStatus(response);
-            log.assert(response.content.data.indexOf(`도메인`) >= 0, "content verification failed", response.content.data);
+            log.assert(response.content.data.indexOf(`도메인`) >= 0, "content verification failed.  expect the word 'Domain' translated to Korean.", response.content.data);
+        });
+        it2(async function timezone() {
+            const pageRequest = {
+                "url": "http://localhost/examples/corpus/timezone.html",
+                "renderType": "plainText",
+                "overseerScript": "await page.emulateTimezone('Asia/Tokyo');",
+            };
+            const response = await browser.requestSingle(pageRequest);
+            verifyResponseStatus(response);
+            log.assert(response.content.data.indexOf(`Asia/Tokyo`) >= 0, "content verification failed.  expect to set timezone to Tokyo, but it didnt", response.content.data);
         });
         it2(async function redirect_with_scripts_also_verify_content_properties() {
             const pageRequest = {
