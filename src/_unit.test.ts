@@ -234,6 +234,24 @@ describe( __filename, function unitTests() {
 			log.assert( response.content.data.includes( "This domain is established to be used" ), "content verification failed", response.content.data );
 		} );
 
+		/** on 20200725  discovered that rendering the page https://fonts.google.com/specimen/Monoton  does self-redirects which
+		 * caused page.load to not trigger properly (events reset on navigation, but pptr never fires them again)
+		 * so fixed by checking if redirecting to the same URL.  if so, skips the onNavigation logic.
+		 * This test makes sure that the https://fonts.google.com/specimen/Monoton page renders in a timely fashion.
+		 */
+		it2( async function complexPageSelfRedirect_20200725() {
+			const pageRequest: ioDatatypes.IPageRequest = {
+				url: "https://fonts.google.com/specimen/Monoton",
+				renderType: "plainText",
+				//outputAsJson:true,
+			};
+			const response = await browser.requestSingle( pageRequest );
+			verifyResponseStatus( response );
+
+
+
+		} ).timeout( 10000 );   //if this takes more than 10 sec, investigate for 408 timeouts
+
 
 		it2( async function doneWhenSelector() {
 			const pageRequest: ioDatatypes.IPageRequest = {
@@ -841,7 +859,7 @@ describe( __filename, function unitTests() {
 					throw _err;
 				}
 			}
-		} ).timeout( 12000 );
+		} ).timeout( 15000 );
 
 		it2( async function invalidPort() {
 			let pageRequest: ioDatatypes.IPageRequest = {
