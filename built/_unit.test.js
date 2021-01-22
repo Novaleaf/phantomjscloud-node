@@ -146,6 +146,19 @@ describe(__filename, function unitTests() {
             verifyResponseStatus(response);
             log.assert(response.content.data.includes("This domain is established to be used"), "content verification failed", response.content.data);
         });
+        /** on 20200725  discovered that rendering the page https://fonts.google.com/specimen/Monoton  does self-redirects which
+         * caused page.load to not trigger properly (events reset on navigation, but pptr never fires them again)
+         * so fixed by checking if redirecting to the same URL.  if so, skips the onNavigation logic.
+         * This test makes sure that the https://fonts.google.com/specimen/Monoton page renders in a timely fashion.
+         */
+        it2(async function complexPageSelfRedirect_20200725() {
+            const pageRequest = {
+                url: "https://fonts.google.com/specimen/Monoton",
+                renderType: "plainText",
+            };
+            const response = await browser.requestSingle(pageRequest);
+            verifyResponseStatus(response);
+        }).timeout(10000); //if this takes more than 10 sec, investigate for 408 timeouts
         it2(async function doneWhenSelector() {
             const pageRequest = {
                 url: "http://localhost/examples/corpus/ajax.html",
@@ -187,7 +200,7 @@ describe(__filename, function unitTests() {
                 }
             };
             const response = await browser.requestSingle(pageRequest);
-            verifyResponseStatus(response, { doneDetail: "domReady" });
+            verifyResponseStatus(response, { doneDetail: "domReady", contentStatusCode: 424 });
             log.assert(response.content.data.includes("Politics"), "content verification failed", response.content.data);
         }).timeout(15000);
         // ! prod is too fast for the ajax to delay rendering.   so this forceFinish() test doesn't work.
@@ -663,7 +676,7 @@ describe(__filename, function unitTests() {
                     throw _err;
                 }
             }
-        }).timeout(12000);
+        }).timeout(15000);
         it2(async function invalidPort() {
             let pageRequest = {
                 url: "https://www.example.com:82728",

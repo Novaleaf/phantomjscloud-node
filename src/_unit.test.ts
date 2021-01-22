@@ -297,7 +297,7 @@ describe( __filename, function unitTests() {
 				}
 			};
 			const response = await browser.requestSingle( pageRequest );
-			verifyResponseStatus( response, { doneDetail: "domReady" } );
+			verifyResponseStatus( response, { doneDetail: "domReady", contentStatusCode: 424 } );
 			log.assert( response.content.data.includes( "Politics" ), "content verification failed", response.content.data );
 		} ).timeout( 15000 );
 
