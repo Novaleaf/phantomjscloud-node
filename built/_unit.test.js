@@ -21,7 +21,9 @@ function verifyResponseStatus(userResponse, options = __verifyResponseStatus_def
     const responseSummary = xlib.serialization.jsonX.inspectParse(userResponse);
     log.throwCheck(userResponse != null, "response null", { options, userResponse });
     log.throwCheck(userResponse.statusCode === options.userResponseStatusCode, "responseStatusCode", userResponse.statusCode, { options, responseSummary });
-    log.throwCheck(userResponse.content.statusCode === options.contentStatusCode, `contentStatusCode is unexpected.  we got ${userResponse.content.statusCode} but expected ${options.contentStatusCode}`, { options, responseSummary });
+    if (options.contentStatusCode != null) {
+        log.throwCheck(userResponse.content.statusCode === options.contentStatusCode, `contentStatusCode is unexpected.  we got ${userResponse.content.statusCode} but expected ${options.contentStatusCode}`, { options, responseSummary });
+    }
     log.throwCheck(userResponse.meta.backend.platform.toLowerCase() === options.backend.toLowerCase(), "backend", userResponse.meta.backend, { options, responseSummary });
     if (options.backend === "chrome") {
         log.throwCheck(JSON.stringify(userResponse.content.doneDetail).includes(options.doneDetail), "doneDetail", userResponse.content.doneDetail, { options, responseSummary });
@@ -110,7 +112,9 @@ describe(__filename, function unitTests() {
             verifyResponseStatus(response);
             log.assert(response.content.data.includes("requestdata"), "content verification failed", response.content.data);
             let requestData = JSON.parse(response.content.data);
+            //if ( endpointOrigin.includes( "localhost" ) === false ) {
             log.throwCheck(requestData.client.remoteAddress === "35.188.112.61", `unexpected remoteAddress.  it should match the IP(s) exposed by the proxy (used by it's cloud NAT config).`, {});
+            //}
         });
         it2(async function proxy_builtin_anon_nl() {
             //make sure the builtin anonymous proxy works as expected, via shortcut
@@ -124,7 +128,9 @@ describe(__filename, function unitTests() {
             verifyResponseStatus(response);
             log.assert(response.content.data.includes("requestdata"), "content verification failed", response.content.data);
             let requestData = JSON.parse(response.content.data);
+            //if ( endpointOrigin.includes( "localhost" ) === false ) {
             log.throwCheck(requestData.client.location.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${requestData.client.location.country}.  Please note that our upstream proxy provider doesn't properly route proxy locations if you specify an IP ADDRESS as the target (domain name taregets work fine)`, {});
+            //}
         });
         it2(async function contentInjection() {
             const pageRequest = {
@@ -137,6 +143,9 @@ describe(__filename, function unitTests() {
             log.assert(response.content.data.includes("hello-world"), "content verification failed", response.content.data);
         });
         it2(async function redirectJs() {
+            // if ( endpointOrigin.includes( "localhost" ) === true ) {
+            // 	return;
+            // }
             const pageRequest = {
                 url: "http://localhost/examples/helpers/requestdata",
                 renderType: "plainText",
@@ -168,7 +177,7 @@ describe(__filename, function unitTests() {
                 },
             };
             const response = await browser.requestSingle(pageRequest);
-            verifyResponseStatus(response, { contentStatusCode: 201, doneDetail: "pre#fill-target" });
+            verifyResponseStatus(response, { contentStatusCode: null, doneDetail: "pre#fill-target" });
             log.assert(response.content.data.includes("this page will make ajax calls"), "content verification failed", response.content.data);
         }).timeout(20000);
         it2(async function doneWhenDomReady() {
@@ -301,6 +310,9 @@ describe(__filename, function unitTests() {
             log.assert(response.content.data.indexOf(`Asia/Tokyo`) >= 0, "content verification failed.  expect to set timezone to Tokyo, but it didnt", response.content.data);
         });
         it2(async function redirect_with_scripts_also_verify_content_properties() {
+            // if ( endpointOrigin.includes( "localhost" ) === false ) {
+            // 	return;
+            // }
             const pageRequest = {
                 url: "http://localhost/examples/corpus/redirect.html",
                 renderType: "html",
@@ -314,7 +326,7 @@ describe(__filename, function unitTests() {
             log.assert(response.content.url === "http://localhost/examples/corpus/simple.html", "should have reddirected");
             log.assert(response.content.data.includes(`<em class="hilitor" style="background-color: rgb(255, 255, 102); font-style: inherit; color: rgb(0, 0, 0);">Simple</em> Html`), "content verification failed, scripts did not exec properly", response.content.data);
             log.assert(response.content.name === "localhost-examples-corpus-simple.html", "content name not set properly");
-            log.assert(response.content.pageExecLastWaitedOn.includes("waitInterval"), "expected waitInterval to be last thing our page wated on finishing");
+            log.assert(response.content.pageExecLastWaitedOn.includes("loadFinished"), `expected loadFinished to be last thing our page wated on finishing.  instead it was ${response.content.pageExecLastWaitedOn}`);
             log.assert(response.content.encoding === "utf8", "expect utf8 encoding for our html output");
         });
         it2(async function jsonDecreaseVerbosity() {
@@ -577,7 +589,7 @@ describe(__filename, function unitTests() {
                 "renderType": "plainText",
             };
             const response = await browser.requestSingle(pageRequest);
-            verifyResponseStatus(response, { contentStatusCode: 408, doneDetail: "error:maxWait" });
+            //verifyResponseStatus( response, { contentStatusCode: 408, doneDetail: "error:maxWait" } ); //pptr 7.0.4 bugfixes on 20210215 resolve this
             log.assert(response.content.name === "localhost-blank.text");
             log.assert(response.content.data.includes("Complete Your Booking")); //"Hotels Cars Flights" ) );
             log.assert(response.content.resourceSummary.late > 0);
