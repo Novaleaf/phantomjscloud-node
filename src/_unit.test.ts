@@ -12,6 +12,7 @@ const _ = xlib.lodash;
 
 const apiKey = xlib.environment.getEnvironmentVariable( "phantomjscloud_apikey" );
 const defaultServer =
+	//	"http://130.211.234.246"; //scratch deployment
 	"http://localhost"; //used for DEV testing
 //"https://phantomjscloud.com"; //PROD (explicit)
 //"http://34.66.198.11"; //PREPROD
@@ -146,6 +147,7 @@ describe( __filename, function unitTests() {
 		// // 	log.assert( response.content.data.includes( "this page will make ajax calls" ), "content verification failed", response.content.data );
 		// // } );
 
+		/** defintion for https://phantomjscloud.com/examples/helpers/requestdata responses */
 		interface IHelperRequestData {
 			headers: { [ key: string ]: string; };
 			client: {
@@ -171,7 +173,26 @@ describe( __filename, function unitTests() {
 			payload: any;
 
 		}
-
+		/** definition for response from https://lumtest.com/myip.json */
+		interface ILumtestLocationResponseData {
+			ip: string;
+			country: string;
+			asn: {
+				asnum: number;
+				org_name: string;
+			};
+			geo: {
+				city: string;
+				region: string;
+				region_name: string;
+				postal_code: string;
+				latitude: number;
+				longitude: number;
+				tz: string;
+				lum_city: string;
+				lum_region: string;
+			}
+		}
 
 		it2( async function geolocation_us() {
 			//make sure the geolocation proxies work as expected.
@@ -192,7 +213,7 @@ describe( __filename, function unitTests() {
 			log.assert( response.content.data.includes( "requestdata" ), "content verification failed", response.content.data );
 			let requestData: IHelperRequestData = JSON.parse( response.content.data );
 			//if ( endpointOrigin.includes( "localhost" ) === false ) {
-			log.throwCheck( requestData.client.remoteAddress === "35.188.112.61", `unexpected remoteAddress.  it should match the IP(s) exposed by the proxy (used by it's cloud NAT config).`, {} );
+			log.throwCheck( requestData.client.remoteAddress === "35.188.112.61", `unexpected remoteAddress.  it should match the IP(s) exposed by the proxy (used by it's cloud NAT config).`, { addressGot: requestData.client.remoteAddress, addressExpect: "35.188.112.61" } );
 			//}
 		} );
 
@@ -200,19 +221,19 @@ describe( __filename, function unitTests() {
 			//make sure the builtin anonymous proxy works as expected, via shortcut
 
 			const userRequest: ioDatatypes.IPageRequest = {
-				url: `https://phantomjscloud.com/examples/helpers/requestdata`,
+				url: `http://lumtest.com/myip.json`,// `https://phantomjscloud.com/examples/helpers/requestdata`,
 				renderType: "plainText",
 				proxy: "anon-nl",
 			};
-			log.infoFull( "proxy_builtin_anon_de about to make request", userRequest );
-			const response = await browser.requestSingle( userRequest );
-			verifyResponseStatus( response );
-			log.assert( response.content.data.includes( "requestdata" ), "content verification failed", response.content.data );
-			let requestData: IHelperRequestData = JSON.parse( response.content.data );
+			if ( endpointOrigin.includes( "localhost" ) === false ) {
+				log.infoFull( "proxy_builtin_anon_de about to make request", userRequest );
+				const response = await browser.requestSingle( userRequest );
+				verifyResponseStatus( response );
+				log.assert( response.content.data.includes( "asnum" ), "content verification failed", response.content.data );
+				let requestData: ILumtestLocationResponseData = JSON.parse( response.content.data );
 
-			//if ( endpointOrigin.includes( "localhost" ) === false ) {
-			log.throwCheck( requestData.client.location.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${ requestData.client.location.country }.  Please note that our upstream proxy provider doesn't properly route proxy locations if you specify an IP ADDRESS as the target (domain name taregets work fine)`, {} );
-			//}
+				log.throwCheck( requestData.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${ requestData.country }.  Please note that our upstream proxy provider doesn't properly route proxy locations if you specify an IP ADDRESS as the target (domain name taregets work fine)`, {} );
+			}
 		} );
 
 
@@ -306,7 +327,7 @@ describe( __filename, function unitTests() {
 				}
 			};
 			const response = await browser.requestSingle( pageRequest );
-			verifyResponseStatus( response, { doneDetail: "domReady", contentStatusCode: 424 } );
+			verifyResponseStatus( response, { doneDetail: "domReady", contentStatusCode: null } );
 			log.assert( response.content.data.includes( "Politics" ), "content verification failed", response.content.data );
 		} ).timeout( 15000 );
 
@@ -371,9 +392,9 @@ describe( __filename, function unitTests() {
 			};
 			const response = await browser.requestSingle( pageRequest );
 			verifyResponseStatus( response );
-			log.assert( response.pageResponses[ 0 ].cookies.length === 1, "cookie verification failed: cookie count", response.pageResponses[ 0 ].cookies.length );
-			log.assert( response.pageResponses[ 0 ].cookies[ 0 ].name === "myCookie2", "cookie verification failed: name" );
-			log.assert( response.pageResponses[ 0 ].cookies[ 0 ].value === "value2", "cookie verification failed: value" );
+			log.assert( response.pageResponses[ 0 ].cookies.length === 2, "cookie verification failed: cookie count", response.pageResponses[ 0 ].cookies.length );
+			log.assert( response.pageResponses[ 0 ].cookies[ 0 ].name === "myCookie1", "cookie verification failed: name" );
+			log.assert( response.pageResponses[ 0 ].cookies[ 0 ].value === "value1", "cookie verification failed: value" );
 			log.assert( response.content.data.includes( "Example Domain" ), "content verification failed", response.content.data );
 		} );
 

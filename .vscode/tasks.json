@@ -7,16 +7,6 @@
 			"label": "tslint",
 			"type": "shell",
 			"command": "tslint --project tsconfig.json --config tslint.json --format verbose",
-			//// disabling the following "prolemMatcher" section because while it shows tslint errors
-			//// in the Problems Tab, the problems are "stuck" there.
-			//// a workaround is just to run the tslint task (example: keyboard shortcut CTRL+ALT+T)
-			//// and look at the Terminal window.  you can CTRL+Click the file+line number shown
-			//// in the tslint CLI output for an error, and it will navigate you to the error.
-			// "problemMatcher": {
-			// 	"base": "$tslint5",
-			// 	"fileLocation": "absolute",
-			// 	"owner": "tslint-task"
-			// },
 			"group": {
 				"kind": "test",
 				"isDefault": true
@@ -26,20 +16,19 @@
 			"label": "tslint-fix",
 			"type": "shell",
 			"command": "tslint --project tsconfig.json --config tslint.json --format verbose --fix",
-			//// disabling the following "prolemMatcher" section because while it shows tslint errors
-			//// in the Problems Tab, the problems are "stuck" there.
-			//// a workaround is just to run the tslint task (example: keyboard shortcut CTRL+ALT+T)
-			//// and look at the Terminal window.  you can CTRL+Click the file+line number shown
-			//// in the tslint CLI output for an error, and it will navigate you to the error.
-			// "problemMatcher": {
-			// 	"base": "$tslint5",
-			// 	"fileLocation": "absolute",
-			// 	"owner": "tslint-task"
-			// },
 			"group": {
 				"kind": "test",
 				"isDefault": false
 			}
 		},
+		{
+			"type": "typescript",
+			"tsconfig": "tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build",
+			"label": "tsc: build - tsconfig.json"
+		}
 	]
 }

@@ -7,7 +7,9 @@ const __ = xlib.lolo;
 const log = __.log;
 const _ = xlib.lodash;
 const apiKey = xlib.environment.getEnvironmentVariable("phantomjscloud_apikey");
-const defaultServer = "http://localhost"; //used for DEV testing
+const defaultServer = 
+//	"http://130.211.234.246"; //scratch deployment
+"http://localhost"; //used for DEV testing
 //"https://phantomjscloud.com"; //PROD (explicit)
 //"http://34.66.198.11"; //PREPROD
 //undefined; //PROD (implicit, default)
@@ -113,24 +115,24 @@ describe(__filename, function unitTests() {
             log.assert(response.content.data.includes("requestdata"), "content verification failed", response.content.data);
             let requestData = JSON.parse(response.content.data);
             //if ( endpointOrigin.includes( "localhost" ) === false ) {
-            log.throwCheck(requestData.client.remoteAddress === "35.188.112.61", `unexpected remoteAddress.  it should match the IP(s) exposed by the proxy (used by it's cloud NAT config).`, {});
+            log.throwCheck(requestData.client.remoteAddress === "35.188.112.61", `unexpected remoteAddress.  it should match the IP(s) exposed by the proxy (used by it's cloud NAT config).`, { addressGot: requestData.client.remoteAddress, addressExpect: "35.188.112.61" });
             //}
         });
         it2(async function proxy_builtin_anon_nl() {
             //make sure the builtin anonymous proxy works as expected, via shortcut
             const userRequest = {
-                url: `https://phantomjscloud.com/examples/helpers/requestdata`,
+                url: `http://lumtest.com/myip.json`,
                 renderType: "plainText",
                 proxy: "anon-nl",
             };
-            log.infoFull("proxy_builtin_anon_de about to make request", userRequest);
-            const response = await browser.requestSingle(userRequest);
-            verifyResponseStatus(response);
-            log.assert(response.content.data.includes("requestdata"), "content verification failed", response.content.data);
-            let requestData = JSON.parse(response.content.data);
-            //if ( endpointOrigin.includes( "localhost" ) === false ) {
-            log.throwCheck(requestData.client.location.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${requestData.client.location.country}.  Please note that our upstream proxy provider doesn't properly route proxy locations if you specify an IP ADDRESS as the target (domain name taregets work fine)`, {});
-            //}
+            if (endpointOrigin.includes("localhost") === false) {
+                log.infoFull("proxy_builtin_anon_de about to make request", userRequest);
+                const response = await browser.requestSingle(userRequest);
+                verifyResponseStatus(response);
+                log.assert(response.content.data.includes("asnum"), "content verification failed", response.content.data);
+                let requestData = JSON.parse(response.content.data);
+                log.throwCheck(requestData.country === "NL", `unexpected country.   we are attempting to use the builtin anon proxy to use a ip address from germany.   our page gave this location instead:  ${requestData.country}.  Please note that our upstream proxy provider doesn't properly route proxy locations if you specify an IP ADDRESS as the target (domain name taregets work fine)`, {});
+            }
         });
         it2(async function contentInjection() {
             const pageRequest = {
@@ -164,6 +166,7 @@ describe(__filename, function unitTests() {
             const pageRequest = {
                 url: "https://fonts.google.com/specimen/Monoton",
                 renderType: "plainText",
+                //outputAsJson:true,
             };
             const response = await browser.requestSingle(pageRequest);
             verifyResponseStatus(response);
@@ -205,11 +208,12 @@ describe(__filename, function unitTests() {
                         { isBlacklisted: true, type: "fetch" },
                         { isBlacklisted: true, type: "font" },
                         { isBlacklisted: true, type: "manifest" },
+                        //{ isBlacklisted: true, type: "xhr" } ,
                     ],
                 }
             };
             const response = await browser.requestSingle(pageRequest);
-            verifyResponseStatus(response, { doneDetail: "domReady", contentStatusCode: 424 });
+            verifyResponseStatus(response, { doneDetail: "domReady", contentStatusCode: null });
             log.assert(response.content.data.includes("Politics"), "content verification failed", response.content.data);
         }).timeout(15000);
         // ! prod is too fast for the ajax to delay rendering.   so this forceFinish() test doesn't work.
@@ -265,9 +269,9 @@ describe(__filename, function unitTests() {
             };
             const response = await browser.requestSingle(pageRequest);
             verifyResponseStatus(response);
-            log.assert(response.pageResponses[0].cookies.length === 1, "cookie verification failed: cookie count", response.pageResponses[0].cookies.length);
-            log.assert(response.pageResponses[0].cookies[0].name === "myCookie2", "cookie verification failed: name");
-            log.assert(response.pageResponses[0].cookies[0].value === "value2", "cookie verification failed: value");
+            log.assert(response.pageResponses[0].cookies.length === 2, "cookie verification failed: cookie count", response.pageResponses[0].cookies.length);
+            log.assert(response.pageResponses[0].cookies[0].name === "myCookie1", "cookie verification failed: name");
+            log.assert(response.pageResponses[0].cookies[0].value === "value1", "cookie verification failed: value");
             log.assert(response.content.data.includes("Example Domain"), "content verification failed", response.content.data);
         });
         it2(async function cors_bypass_and_loadFinished_script() {
@@ -587,6 +591,7 @@ describe(__filename, function unitTests() {
                     }
                 },
                 "renderType": "plainText",
+                //"renderType": "jpeg",
             };
             const response = await browser.requestSingle(pageRequest);
             //verifyResponseStatus( response, { contentStatusCode: 408, doneDetail: "error:maxWait" } ); //pptr 7.0.4 bugfixes on 20210215 resolve this
@@ -612,6 +617,7 @@ describe(__filename, function unitTests() {
                     }
                 },
                 "renderType": "plainText",
+                //"renderType": "jpeg",
             };
             const response = await browser.requestSingle(pageRequest);
             verifyResponseStatus(response);

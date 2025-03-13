@@ -42,6 +42,10 @@ function pageRequestDefaultsGet() {
             "events.value.resourceResponse.headers",
             "frameData.content",
             "frameData.childFrames",
+            // "pageResponses.events.value.request.headers",
+            // "pageResponses.events.value.response.headers",
+            // "pageResponses.frameData.content",
+            // "pageResponses.frameData.childFrames",
         ],
         renderSettings: {
             quality: 70,
@@ -65,6 +69,15 @@ function pageRequestDefaultsGet() {
             emulateMedia: "screen",
             omitBackground: false,
             passThroughStatusCode: false,
+            // pngOptions: {
+            // 	optimize: false,
+            // 	colors: 256,
+            // 	noDither: false,
+            // 	//posterize: undefined,
+            // 	qualityMax: 80,
+            // 	qualityMin: 0,
+            // 	speed: 8,
+            // }
         },
         scripts: {
             pageNavigated: [],
